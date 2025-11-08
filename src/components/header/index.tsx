@@ -5,11 +5,14 @@ import {
   Avatar,
   Space,
   Switch,
+  Tag,
   theme,
   Typography,
 } from "antd";
 import React, { useContext } from "react";
 import { ColorModeContext } from "../../contexts/color-mode";
+import { OrgSwitcher } from "../org/OrgSwitcher";
+import { useOrg } from "../../contexts/org";
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -26,11 +29,12 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   const { token } = useToken();
   const { data: user } = useGetIdentity<IUser>();
   const { mode, setMode } = useContext(ColorModeContext);
+  const { isPlatformAdmin, activeMembership } = useOrg();
 
   const headerStyles: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
     display: "flex",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     padding: "0px 24px",
     height: "64px",
@@ -44,6 +48,13 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
 
   return (
     <AntdLayout.Header style={headerStyles}>
+      <Space size="middle">
+        <OrgSwitcher />
+        {activeMembership?.org && (
+          <Tag color="blue">{activeMembership.org.slug}</Tag>
+        )}
+        {isPlatformAdmin && <Tag color="geekblue">Platform Admin</Tag>}
+      </Space>
       <Space>
         <Switch
           checkedChildren="🌛"

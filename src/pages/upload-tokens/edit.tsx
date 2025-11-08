@@ -1,0 +1,140 @@
+import { Edit, useForm, useSelect } from "@refinedev/antd";
+import { Alert, DatePicker, Form, Input, InputNumber, Select } from "antd";
+import dayjs from "dayjs";
+import { useMemo } from "react";
+import { useOrg } from "../../contexts/org";
+
+export const UploadTokensEdit = () => {
+  const { activeMembership } = useOrg();
+  const orgId = activeMembership?.orgId;
+  const canManage = useMemo(
+    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
+    [activeMembership?.role]
+  );
+
+  const { formProps, saveButtonProps, onFinish } = useForm({
+    resource: "upload_tokens",
+    redirect: "list",
+    meta: {
+      select: "id, event_id, token, expires_at, max_uploads, used_count",
+    },
+  });
+
+  const { selectProps: eventSelectProps } = useSelect({
+    resource: "events",
+    optionLabel: "slug",
+    optionValue: "id",
+    filters: orgId
+      ? [
+          {
+            field: "org_id",
+            operator: "eq",
+            value: orgId,
+          },
+        ]
+      : [],
+    queryOptions: {
+      enabled: Boolean(orgId),
+    },
+  });
+
+  const initialValues = {
+    ...formProps.initialValues,
+    expires_at: formProps.initialValues?.expires_at
+      ? dayjs(formProps.initialValues.expires_at)
+      : undefined,
+  };
+
+  const handleFinish = async (values: any) => {
+    if (!canManage) {
+      return false;
+    }
+
+    const payload = {
+      ...values,
+      expires_at: values.expires_at
+        ? values.expires_at.toISOString()
+        : null,
+    };
+
+    return onFinish?.(payload);
+  };
+
+  if (!orgId) {
+    return (
+      <Alert
+        type="info"
+        message="No organization selected"
+        description="Select an organization to manage upload tokens."
+      />
+    );
+  }
+
+  if (!canManage) {
+    return (
+      <Alert
+        type="warning"
+        message="Insufficient permissions"
+        description="You need owner, admin, or editor access to edit upload tokens."
+      />
+    );
+  }
+
+  return (
+    <Edit
+      saveButtonProps={{
+        ...saveButtonProps,
+        disabled: saveButtonProps.disabled || !canManage,
+      }}
+    >
+      <Form
+        {...formProps}
+        layout="vertical"
+        onFinish={handleFinish}
+        initialValues={initialValues}
+      >
+        <Form.Item
+          label="Event"
+          name="event_id"
+          rules={[{ required: true, message: "Event is required" }]}
+        >
+          <Select
+            placeholder="Select event"
+            {...eventSelectProps}
+            disabled={!eventSelectProps.options?.length}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Token"
+          name="token"
+          rules={[{ required: true, message: "Token is required" }]}
+        >
+          <Input placeholder="Unique token value" />
+        </Form.Item>
+
+        <Form.Item
+          label="Expires At"
+          name="expires_at"
+          rules={[{ required: true, message: "Expiry date is required" }]}
+        >
+          <DatePicker showTime style={{ width: "100%" }} />
+        </Form.Item>
+
+        <Form.Item
+          label="Max Uploads"
+          name="max_uploads"
+          rules={[{ required: true, message: "Max uploads is required" }]}
+        >
+          <InputNumber style={{ width: "100%" }} min={1} />
+        </Form.Item>
+
+        <Form.Item label="Used Count" name="used_count">
+          <InputNumber style={{ width: "100%" }} min={0} />
+        </Form.Item>
+      </Form>
+    </Edit>
+  );
+};
+
+

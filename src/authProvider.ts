@@ -1,5 +1,9 @@
 import { AuthProvider } from "@refinedev/core";
-import { supabaseClient } from "./utility";
+import {
+  supabaseClient,
+  fetchIsPlatformAdmin,
+  clearPlatformAdminCache,
+} from "./utility";
 
 const authProvider: AuthProvider = {
   login: async ({ email, password, providerName }) => {
@@ -20,7 +24,7 @@ const authProvider: AuthProvider = {
         if (data?.url) {
           return {
             success: true,
-            redirectTo: "/",
+            redirectTo: "/admin",
           };
         }
       }
@@ -41,7 +45,7 @@ const authProvider: AuthProvider = {
       if (data?.user) {
         return {
           success: true,
-          redirectTo: "/",
+          redirectTo: "/admin",
         };
       }
     } catch (error: any) {
@@ -76,7 +80,7 @@ const authProvider: AuthProvider = {
       if (data) {
         return {
           success: true,
-          redirectTo: "/",
+          redirectTo: "/admin",
         };
       }
     } catch (error: any) {
@@ -146,7 +150,7 @@ const authProvider: AuthProvider = {
       if (data) {
         return {
           success: true,
-          redirectTo: "/",
+          redirectTo: "/admin",
         };
       }
     } catch (error: any) {
@@ -173,9 +177,11 @@ const authProvider: AuthProvider = {
       };
     }
 
+    clearPlatformAdminCache();
+
     return {
       success: true,
-      redirectTo: "/",
+      redirectTo: "/admin/login",
     };
   },
   onError: async (error) => {
@@ -195,7 +201,7 @@ const authProvider: AuthProvider = {
             name: "Session not found",
           },
           logout: true,
-          redirectTo: "/login",
+          redirectTo: "/admin/login",
         };
       }
     } catch (error: any) {
@@ -206,7 +212,7 @@ const authProvider: AuthProvider = {
           name: "Not authenticated",
         },
         logout: true,
-        redirectTo: "/login",
+        redirectTo: "/admin/login",
       };
     }
 
@@ -215,13 +221,65 @@ const authProvider: AuthProvider = {
     };
   },
   getPermissions: async () => {
-    const user = await supabaseClient.auth.getUser();
+    try {
+      const [{ data: sessionData }, membershipsResult] =
+        await Promise.all([
+          supabaseClient.auth.getSession(),
+          supabaseClient
+            .from("org_members")
+            .select(
+              `
+                org_id,
+                user_id,
+                role,
+                org:orgs (
+                  id,
+                  name,
+                  slug
+                )
+              `
+            )
+            .order("created_at", { ascending: true }),
+        ]);
 
-    if (user) {
-      return user.data.user?.role;
+      const session = sessionData.session;
+
+      if (!session?.user) {
+        return null;
+      }
+
+      if (membershipsResult.error) {
+        throw membershipsResult.error;
+      }
+
+      const memberships =
+        membershipsResult.data
+          ?.filter((row) => row.user_id === session.user.id)
+          ?.map((row) => {
+            const orgData = Array.isArray(row.org) ? row.org[0] : row.org;
+            return {
+              orgId: row.org_id,
+              role: row.role,
+              org: {
+                id: orgData?.id ?? row.org_id,
+                name: orgData?.name ?? "",
+                slug: orgData?.slug ?? "",
+              },
+            };
+          }) ?? [];
+
+      const isPlatformAdmin = await fetchIsPlatformAdmin(session.user.id);
+
+      return {
+        userId: session.user.id,
+        email: session.user.email,
+        memberships,
+        isPlatformAdmin,
+      };
+    } catch (error) {
+      console.error("Failed to resolve permissions", error);
+      return null;
     }
-
-    return null;
   },
   getIdentity: async () => {
     const { data } = await supabaseClient.auth.getUser();

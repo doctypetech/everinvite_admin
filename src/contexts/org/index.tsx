@@ -1,0 +1,247 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import type { Session } from "@supabase/supabase-js";
+import {
+  supabaseClient,
+  fetchIsPlatformAdmin,
+  clearPlatformAdminCache,
+} from "../../utility";
+
+export type OrgRole = "owner" | "admin" | "editor" | "viewer";
+
+export type OrgMembership = {
+  orgId: number;
+  role: OrgRole;
+  org: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+};
+
+type OrgContextValue = {
+  loading: boolean;
+  session: Session | null;
+  memberships: OrgMembership[];
+  activeMembership: OrgMembership | null;
+  setActiveOrgId: (orgId: number) => void;
+  refreshMemberships: () => Promise<void>;
+  isPlatformAdmin: boolean;
+};
+
+const STORAGE_KEY = "everinvite.activeOrgId";
+
+const OrgContext = createContext<OrgContextValue | undefined>(undefined);
+
+const getStoredOrgId = (): number | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const storeOrgId = (orgId: number | null) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (orgId == null) {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } else {
+    window.localStorage.setItem(STORAGE_KEY, String(orgId));
+  }
+};
+
+export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [memberships, setMemberships] = useState<OrgMembership[]>([]);
+  const [activeOrgId, setActiveOrgIdState] = useState<number | null>(
+    getStoredOrgId
+  );
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState<boolean>(false);
+
+  const syncActiveOrg = useCallback(
+    (nextMemberships: OrgMembership[]) => {
+      if (nextMemberships.length === 0) {
+        setActiveOrgIdState(null);
+        storeOrgId(null);
+        return;
+      }
+
+      const hasExisting = nextMemberships.some(
+        (membership) => membership.orgId === activeOrgId
+      );
+
+      if (hasExisting && activeOrgId != null) {
+        return;
+      }
+
+      const fallbackOrgId = nextMemberships[0]?.orgId ?? null;
+      setActiveOrgIdState(fallbackOrgId);
+      storeOrgId(fallbackOrgId);
+    },
+    [activeOrgId]
+  );
+
+  const fetchMemberships = useCallback(
+    async (userId?: string | null) => {
+      if (!userId) {
+        setMemberships([]);
+        setIsPlatformAdmin(false);
+        setLoading(false);
+        clearPlatformAdminCache();
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { data, error } = await supabaseClient
+          .from("org_members")
+          .select(
+            `
+              org_id,
+              role,
+              org:orgs (
+                id,
+                name,
+                slug
+              )
+            `
+          )
+          .eq("user_id", userId)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        const mapped: OrgMembership[] =
+          data?.map((row) => {
+            const orgData = Array.isArray(row.org) ? row.org[0] : row.org;
+
+            return {
+              orgId: row.org_id,
+              role: row.role,
+              org: {
+                id: orgData?.id ?? row.org_id,
+                name: orgData?.name ?? "",
+                slug: orgData?.slug ?? "",
+              },
+            };
+          }) ?? [];
+
+        setMemberships(mapped);
+        syncActiveOrg(mapped);
+
+        const platformAdminFlag = await fetchIsPlatformAdmin(
+          userId
+        );
+        setIsPlatformAdmin(platformAdminFlag);
+      } catch (error) {
+        console.error("Failed to load org memberships", error);
+        setMemberships([]);
+        setIsPlatformAdmin(false);
+        setActiveOrgIdState(null);
+        storeOrgId(null);
+        clearPlatformAdminCache();
+      } finally {
+        setLoading(false);
+      }
+    },
+    [syncActiveOrg]
+  );
+
+  const refreshMemberships = useCallback(async () => {
+    const { data } = await supabaseClient.auth.getSession();
+    const nextSession = data.session ?? null;
+    setSession(nextSession);
+    await fetchMemberships(nextSession?.user?.id);
+  }, [fetchMemberships]);
+
+  useEffect(() => {
+    refreshMemberships()
+      .catch((error) => {
+        console.error("Failed to initialize org context", error);
+        setLoading(false);
+      });
+
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((_, nextSession) => {
+      setSession(nextSession ?? null);
+      fetchMemberships(nextSession?.user?.id).catch((error) => {
+        console.error("Failed to refresh memberships after auth change", error);
+      });
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [fetchMemberships, refreshMemberships]);
+
+  const setActiveOrgId = useCallback((orgId: number) => {
+    setActiveOrgIdState(orgId);
+    storeOrgId(orgId);
+  }, []);
+
+  const activeMembership = useMemo(() => {
+    if (activeOrgId == null) {
+      return null;
+    }
+
+    return (
+      memberships.find((membership) => membership.orgId === activeOrgId) ?? null
+    );
+  }, [activeOrgId, memberships]);
+
+  const value = useMemo<OrgContextValue>(
+    () => ({
+      loading,
+      session,
+      memberships,
+      activeMembership,
+      setActiveOrgId,
+      refreshMemberships,
+      isPlatformAdmin,
+    }),
+    [
+      activeMembership,
+      isPlatformAdmin,
+      loading,
+      memberships,
+      refreshMemberships,
+      session,
+      setActiveOrgId,
+    ]
+  );
+
+  return <OrgContext.Provider value={value}>{children}</OrgContext.Provider>;
+};
+
+export const useOrg = (): OrgContextValue => {
+  const context = useContext(OrgContext);
+  if (!context) {
+    throw new Error("useOrg must be used within an OrgProvider");
+  }
+
+  return context;
+};
+
+
