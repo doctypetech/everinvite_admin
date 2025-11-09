@@ -1,7 +1,7 @@
-import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
-import { useParsed } from "@refinedev/core";
+import { DeleteButton, EditButton, List, useTable } from "@refinedev/antd";
 import { Alert, Result, Space, Table } from "antd";
 import { useMemo } from "react";
+
 import {
   RESOURCE_DEFINITION_MAP,
   type ResourceDefinition,
@@ -9,13 +9,20 @@ import {
 import { useOrg } from "../../contexts/org";
 import { formatCellValue, resolveOrgFilterField } from "./helpers";
 
-const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
+const getResourceDefinition = (
+  name?: string,
+): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
 
-export const GenericList: React.FC = () => {
-  const { resource } = useParsed();
-  const resourceName =
-    typeof resource === "string" ? resource : resource?.name;
+export type ResourceSectionProps = {
+  resourceName: string;
+  title?: string;
+};
+
+export const ResourceSection: React.FC<ResourceSectionProps> = ({
+  resourceName,
+  title,
+}) => {
   const definition = getResourceDefinition(resourceName);
   const { activeMembership } = useOrg();
   const activeOrgId = activeMembership?.orgId ?? null;
@@ -25,27 +32,34 @@ export const GenericList: React.FC = () => {
     () =>
       definition?.getRecordId ??
       ((record: Record<string, any>) => String(record.id)),
-    [definition?.getRecordId]
+    [definition?.getRecordId],
   );
 
+  const permanentFilters = useMemo(() => {
+    if (!orgFilterField || !activeOrgId) {
+      return [];
+    }
+
+    return [
+      {
+        field: orgFilterField,
+        operator: "eq",
+        value: activeOrgId,
+      },
+    ];
+  }, [orgFilterField, activeOrgId]);
+
   const { tableProps } = useTable({
+    resource: resourceName,
     meta: definition?.list?.meta,
     sorters: {
       initial: definition?.list?.initialSorters,
     },
     filters: {
       initial: definition?.list?.initialFilters,
-      permanent:
-        orgFilterField && activeOrgId
-          ? [
-              {
-                field: orgFilterField,
-                operator: "eq",
-                value: activeOrgId,
-              },
-            ]
-          : undefined,
+      permanent: permanentFilters,
     },
+    syncWithLocation: false,
   });
 
   if (!definition) {
@@ -53,7 +67,7 @@ export const GenericList: React.FC = () => {
       <Result
         status="404"
         title="Resource not configured"
-        subTitle="The current resource is missing configuration. Please update resourceDefinitions.ts."
+        subTitle={`Missing configuration for resource "${resourceName}".`}
       />
     );
   }
@@ -69,7 +83,11 @@ export const GenericList: React.FC = () => {
   }
 
   return (
-    <List title={definition.label}>
+    <List
+      title={title ?? definition.label}
+      resource={resourceName}
+      breadcrumb={false}
+    >
       <Table
         {...tableProps}
         rowKey={(record) => getRecordId(record as Record<string, any>)}
@@ -95,11 +113,17 @@ export const GenericList: React.FC = () => {
             const recordId = getRecordId(record);
             return (
               <Space>
-                <EditButton size="small" hideText recordItemId={recordId} />
+                <EditButton
+                  size="small"
+                  hideText
+                  resourceNameOrRouteName={resourceName}
+                  recordItemId={recordId}
+                />
                 {definition.canDelete !== false && (
                   <DeleteButton
                     size="small"
                     hideText
+                    resourceNameOrRouteName={resourceName}
                     recordItemId={recordId}
                   />
                 )}
@@ -111,5 +135,4 @@ export const GenericList: React.FC = () => {
     </List>
   );
 };
-
 

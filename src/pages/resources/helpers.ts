@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import type {
   FieldDefinition,
   FieldType,
+  ResourceDefinition,
 } from "../../config/resourceDefinitions";
 
 export const formatCellValue = (
@@ -138,6 +139,24 @@ export const serializeFormValues = (
   });
 
   return output;
+};
+
+export const resolveOrgFilterField = (
+  definition?: ResourceDefinition
+): string | undefined => {
+  if (!definition) {
+    return undefined;
+  }
+
+  if (definition.orgFilterField) {
+    return definition.orgFilterField;
+  }
+
+  const hasOrganizationField = definition.form.fields.some(
+    (field) => field.key === "organization_id"
+  );
+
+  return hasOrganizationField ? "organization_id" : undefined;
 };
 
 

@@ -30,7 +30,7 @@ type OrgContextValue = {
   session: Session | null;
   memberships: OrgMembership[];
   activeMembership: OrgMembership | null;
-  setActiveOrgId: (orgId: string) => void;
+  setActiveOrgId: (orgId: string | null) => void;
   refreshMemberships: () => Promise<void>;
   isPlatformAdmin: boolean;
   isSuperAdmin: boolean;
@@ -74,18 +74,30 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
 
   const syncActiveOrg = useCallback(
-    (nextMemberships: OrgMembership[]) => {
+    (
+      nextMemberships: OrgMembership[],
+      options?: {
+        preserveNull?: boolean;
+      }
+    ) => {
       if (nextMemberships.length === 0) {
         setActiveOrgIdState(null);
         storeOrgId(null);
         return;
       }
 
-      const hasExisting = nextMemberships.some(
-        (membership) => membership.orgId === activeOrgId
-      );
+      const hasExisting =
+        activeOrgId != null
+          ? nextMemberships.some(
+              (membership) => membership.orgId === activeOrgId
+            )
+          : false;
 
-      if (hasExisting && activeOrgId != null) {
+      if (hasExisting) {
+        return;
+      }
+
+      if (activeOrgId == null && options?.preserveNull) {
         return;
       }
 
@@ -105,6 +117,23 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
         clearSuperAdminCache();
         return;
       }
+
+      const mapOrgToMembership = (
+        org: {
+          id: string;
+          name?: string | null;
+          slug?: string | null;
+        },
+        role: OrgRole = "owner"
+      ): OrgMembership => ({
+        orgId: org.id,
+        role,
+        org: {
+          id: org.id,
+          name: org.name ?? "",
+          slug: org.slug ?? "",
+        },
+      });
 
       setLoading(true);
       try {
@@ -145,10 +174,36 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
             };
           }) ?? [];
 
-        setMemberships(mapped);
-        syncActiveOrg(mapped);
-
         const superAdminFlag = await fetchIsSuperAdmin(userId);
+
+        let resolvedMemberships = mapped;
+        let preserveNull = false;
+
+        if (superAdminFlag || resolvedMemberships.length === 0) {
+          try {
+            const { data: orgRows, error: orgError } = await supabaseClient
+              .from("organizations")
+              .select("id, name, slug")
+              .order("name", { ascending: true });
+
+            if (orgError) {
+              throw orgError;
+            }
+
+            resolvedMemberships =
+              orgRows?.map((org) =>
+                mapOrgToMembership(org, superAdminFlag ? "owner" : "viewer")
+              ) ?? [];
+            preserveNull = true;
+          } catch (orgError) {
+            console.error("Failed to load organizations list", orgError);
+            resolvedMemberships = mapped;
+          }
+        }
+
+        setMemberships(resolvedMemberships);
+        syncActiveOrg(resolvedMemberships, { preserveNull });
+
         setIsSuperAdmin(superAdminFlag);
       } catch (error) {
         console.error("Failed to load org memberships", error);
@@ -192,7 +247,7 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [fetchMemberships, refreshMemberships]);
 
-  const setActiveOrgId = useCallback((orgId: string) => {
+  const setActiveOrgId = useCallback((orgId: string | null) => {
     setActiveOrgIdState(orgId);
     storeOrgId(orgId);
   }, []);

@@ -57,6 +57,7 @@ export interface ResourceDefinition {
     edit?: string;
   };
   canDelete?: boolean;
+  orgFilterField?: string;
   list?: {
     columns: ColumnDefinition[];
     meta?: Record<string, unknown>;
@@ -203,6 +204,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "organizations",
     label: "Organizations",
+    orgFilterField: "id",
     routes: {
       list: "/admin/organizations",
       create: "/admin/organizations/create",

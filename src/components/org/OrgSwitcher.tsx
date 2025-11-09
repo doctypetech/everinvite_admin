@@ -10,7 +10,13 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export const OrgSwitcher = () => {
-  const { memberships, activeMembership, setActiveOrgId, loading } = useOrg();
+  const {
+    memberships,
+    activeMembership,
+    setActiveOrgId,
+    loading,
+    isSuperAdmin,
+  } = useOrg();
 
   const options = useMemo(
     () =>
@@ -22,7 +28,7 @@ export const OrgSwitcher = () => {
     [memberships]
   );
 
-  if (!memberships.length) {
+  if (!options.length) {
     return (
       <Typography.Text type="secondary">
         No organization access
@@ -30,22 +36,44 @@ export const OrgSwitcher = () => {
     );
   }
 
+  const showAllOption = isSuperAdmin || options.length > 0;
+  const selectValue =
+    activeMembership?.orgId ?? (showAllOption ? "__all__" : undefined);
+
+  const selectOptions = [
+    ...(showAllOption
+      ? [
+          {
+            value: "__all__",
+            label: (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>All organizations</span>
+              </div>
+            ),
+          },
+        ]
+      : []),
+    ...options.map(({ value, label, role }) => ({
+      value,
+      label: (
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>{label}</span>
+          <Tag>{ROLE_LABELS[role] ?? role}</Tag>
+        </div>
+      ),
+    })),
+  ];
+
   return (
     <Select
       style={{ minWidth: 220 }}
-      value={activeMembership?.orgId}
+      value={selectValue}
       placeholder="Select organization"
-      onChange={(value) => setActiveOrgId(String(value))}
+      onChange={(value) =>
+        setActiveOrgId(value === "__all__" ? null : String(value))
+      }
       loading={loading}
-      options={options.map(({ value, label, role }) => ({
-        value,
-        label: (
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>{label}</span>
-            <Tag>{ROLE_LABELS[role] ?? role}</Tag>
-          </div>
-        ),
-      }))}
+      options={selectOptions}
       optionLabelProp="label"
     />
   );

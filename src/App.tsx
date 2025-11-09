@@ -31,6 +31,11 @@ import {
   RESOURCE_DEFINITIONS,
   type ResourceDefinition,
 } from "./config/resourceDefinitions";
+import {
+  RESOURCE_GROUP_DEFINITIONS,
+  type ResourceGroupDefinition,
+} from "./config/resourceGroups";
+import { ResourceGroupPage } from "./pages/groups";
 
 const dataProvider = createDataProvider();
 const realtimeProvider = liveProvider(supabaseClient);
@@ -42,6 +47,7 @@ const mapResourceToRefine = (definition: ResourceDefinition) => ({
   edit: definition.routes.edit,
   meta: {
     label: definition.label,
+    hide: true,
   },
   options: {
     label: definition.label,
@@ -49,16 +55,40 @@ const mapResourceToRefine = (definition: ResourceDefinition) => ({
   canDelete: definition.canDelete !== false,
 });
 
+const mapGroupToRefine = (definition: ResourceGroupDefinition) => ({
+  name: definition.name,
+  list: definition.route,
+  meta: {
+    label: definition.label,
+  },
+  options: {
+    label: definition.label,
+  },
+  canDelete: false,
+});
+
 const stripAdminPrefix = (path?: string) =>
   path?.replace(/^\/?admin\/?/, "") ?? undefined;
 
 function App() {
   const refineResources = useMemo(
-    () => RESOURCE_DEFINITIONS.map(mapResourceToRefine),
+    () => [
+      ...RESOURCE_GROUP_DEFINITIONS.map(mapGroupToRefine),
+      ...RESOURCE_DEFINITIONS.map(mapResourceToRefine),
+    ],
     []
   );
 
-  const defaultResource = RESOURCE_DEFINITIONS[0];
+  const defaultGroup = RESOURCE_GROUP_DEFINITIONS[0];
+  const groupRouteNames = useMemo(
+    () =>
+      new Set(
+        RESOURCE_GROUP_DEFINITIONS.map((definition) =>
+          stripAdminPrefix(definition.route)
+        ).filter((route): route is string => Boolean(route))
+      ),
+    []
+  );
 
   return (
     <BrowserRouter>
@@ -102,13 +132,28 @@ function App() {
                       index
                       element={
                         <Navigate
-                          to={
-                            defaultResource?.routes.list ?? "/admin/events"
-                          }
+                          to={defaultGroup?.route ?? "/admin/event"}
                           replace
                         />
                       }
                     />
+                    {RESOURCE_GROUP_DEFINITIONS.map((definition) => {
+                      const groupPath = stripAdminPrefix(definition.route);
+
+                      if (!groupPath) {
+                        return null;
+                      }
+
+                      return (
+                        <Route
+                          key={`group-${definition.name}`}
+                          path={groupPath}
+                          element={
+                            <ResourceGroupPage groupName={definition.name} />
+                          }
+                        />
+                      );
+                    })}
                     {RESOURCE_DEFINITIONS.map((definition) => {
                       const listPath = stripAdminPrefix(
                         definition.routes.list
@@ -122,7 +167,7 @@ function App() {
 
                       return (
                         <Fragment key={definition.name}>
-                          {listPath && (
+                          {listPath && !groupRouteNames.has(listPath) && (
                             <Route
                               path={listPath}
                               element={<GenericList />}
