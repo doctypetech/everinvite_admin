@@ -1,15 +1,31 @@
 import type { AccessControlProvider } from "@refinedev/core";
-import { supabaseClient, fetchIsPlatformAdmin } from "./utility";
+import { supabaseClient, fetchIsSuperAdmin } from "./utility";
 
 const PLATFORM_ADMIN_RESOURCES = new Set([
-  "org_members",
-  "platform_admins",
+  "organization_members",
+  "profiles",
 ]);
 
 const PLATFORM_ADMIN_WRITE_RESOURCES = new Set([
-  "event_types",
+  "events",
   "templates",
-  "themes",
+  "organizations",
+  "org_aliases",
+  "event_content",
+  "event_translations",
+  "template_translations",
+  "event_content_translations",
+  "invitees",
+  "invitee_rsvps",
+  "trivia_questions",
+  "trivia_options",
+  "trivia_answers",
+  "trivia_question_translations",
+  "trivia_option_translations",
+  "faq",
+  "faq_translations",
+  "import_batches",
+  "import_invitee_rows",
 ]);
 
 const WRITE_ACTIONS = new Set(["create", "edit", "delete"]);
@@ -30,12 +46,12 @@ export const accessControlProvider: AccessControlProvider = {
       };
     }
 
-    const isPlatformAdmin = await fetchIsPlatformAdmin(session.user.id);
+    const isSuperAdmin = await fetchIsSuperAdmin(session.user.id);
 
     if (PLATFORM_ADMIN_RESOURCES.has(resourceName)) {
       return {
-        can: isPlatformAdmin,
-        reason: isPlatformAdmin ? undefined : "Requires platform admin access",
+        can: isSuperAdmin,
+        reason: isSuperAdmin ? undefined : "Requires super admin access",
       };
     }
 
@@ -44,10 +60,10 @@ export const accessControlProvider: AccessControlProvider = {
       WRITE_ACTIONS.has(actionName)
     ) {
       return {
-        can: isPlatformAdmin,
-        reason: isPlatformAdmin
+        can: isSuperAdmin,
+        reason: isSuperAdmin
           ? undefined
-          : "Requires platform admin access to modify catalog resources",
+          : "Requires super admin access to modify this resource",
       };
     }
 

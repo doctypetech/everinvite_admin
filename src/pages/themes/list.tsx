@@ -1,6 +1,6 @@
-import { List, useTable, EditButton } from "@refinedev/antd";
+import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
-import { Alert, Table } from "antd";
+import { Alert, Space, Table } from "antd";
 import { useMemo } from "react";
 import { useOrg } from "../../contexts/org";
 
@@ -65,12 +65,20 @@ export const ThemesList: React.FC<IResourceComponentsProps> = () => {
         <Table.Column
           title="Actions"
           render={(_, record: { id: number }) => (
-            <EditButton
-              hideText
-              size="small"
-              recordItemId={record.id}
-              disabled={!isPlatformAdmin}
-            />
+            <Space>
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+                disabled={!isPlatformAdmin}
+              />
+              <DeleteButton
+                hideText
+                size="small"
+                recordItemId={record.id}
+                disabled={!isPlatformAdmin}
+              />
+            </Space>
           )}
         />
       </Table>

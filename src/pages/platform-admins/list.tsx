@@ -1,8 +1,9 @@
-import { List, useTable, DeleteButton } from "@refinedev/antd";
+import { DeleteButton, List, useTable } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
-import { Alert, Table } from "antd";
+import { Alert, Table, Typography } from "antd";
 import { useMemo } from "react";
 import { useOrg } from "../../contexts/org";
+import { useUserEmailLookup } from "../../hooks/useUserEmailLookup";
 
 const PLATFORM_ADMINS_META = {
   select: "user_id",
@@ -20,6 +21,14 @@ export const PlatformAdminsList: React.FC<IResourceComponentsProps> = () => {
   );
 
   const { tableProps } = useTable(tableConfig);
+  const userIds = useMemo(
+    () =>
+      ((tableProps?.dataSource as Array<{ user_id?: string }> | undefined) ?? []).map(
+        (row) => row.user_id
+      ),
+    [tableProps?.dataSource]
+  );
+  const { emailById } = useUserEmailLookup(userIds);
 
   if (tableProps.loading) {
     return null;
@@ -45,7 +54,15 @@ export const PlatformAdminsList: React.FC<IResourceComponentsProps> = () => {
         />
       )}
       <Table {...tableProps} rowKey="user_id">
-        <Table.Column dataIndex="user_id" title="User ID" />
+        <Table.Column
+          dataIndex="user_id"
+          title="Email"
+          render={(value: string) =>
+            emailById.get(value) ?? (
+              <Typography.Text type="secondary">{value}</Typography.Text>
+            )
+          }
+        />
         <Table.Column
           title="Actions"
           render={(_, record: { user_id: string }) => (

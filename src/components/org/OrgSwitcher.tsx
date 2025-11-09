@@ -35,7 +35,7 @@ export const OrgSwitcher = () => {
       style={{ minWidth: 220 }}
       value={activeMembership?.orgId}
       placeholder="Select organization"
-      onChange={(value) => setActiveOrgId(Number(value))}
+      onChange={(value) => setActiveOrgId(String(value))}
       loading={loading}
       options={options.map(({ value, label, role }) => ({
         value,

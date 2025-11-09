@@ -1,8 +1,8 @@
 import { AuthProvider } from "@refinedev/core";
 import {
   supabaseClient,
-  fetchIsPlatformAdmin,
-  clearPlatformAdminCache,
+  fetchIsSuperAdmin,
+  clearSuperAdminCache,
 } from "./utility";
 
 const authProvider: AuthProvider = {
@@ -63,107 +63,30 @@ const authProvider: AuthProvider = {
       },
     };
   },
-  register: async ({ email, password }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-          redirectTo: "/admin",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
+  register: async () => {
     return {
       success: false,
       error: {
-        message: "Register failed",
-        name: "Invalid email or password",
+        message: "Registration is disabled. Please contact an administrator.",
+        name: "registration_disabled",
       },
     };
   },
-  forgotPassword: async ({ email }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo: `${window.location.origin}/update-password`,
-        }
-      );
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
-
+  forgotPassword: async () => {
     return {
       success: false,
       error: {
-        message: "Forgot password failed",
-        name: "Invalid email",
+        message: "Password reset is disabled. Please contact an administrator.",
+        name: "password_reset_disabled",
       },
     };
   },
-  updatePassword: async ({ password }) => {
-    try {
-      const { data, error } = await supabaseClient.auth.updateUser({
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error,
-        };
-      }
-
-      if (data) {
-        return {
-          success: true,
-          redirectTo: "/admin",
-        };
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        error,
-      };
-    }
+  updatePassword: async () => {
     return {
       success: false,
       error: {
-        message: "Update password failed",
-        name: "Invalid password",
+        message: "Password updates are managed by administrators.",
+        name: "password_update_disabled",
       },
     };
   },
@@ -177,7 +100,7 @@ const authProvider: AuthProvider = {
       };
     }
 
-    clearPlatformAdminCache();
+    clearSuperAdminCache();
 
     return {
       success: true,
@@ -226,13 +149,13 @@ const authProvider: AuthProvider = {
         await Promise.all([
           supabaseClient.auth.getSession(),
           supabaseClient
-            .from("org_members")
+            .from("organization_members")
             .select(
               `
-                org_id,
+                organization_id,
                 user_id,
                 role,
-                org:orgs (
+                organization:organizations (
                   id,
                   name,
                   slug
@@ -256,25 +179,28 @@ const authProvider: AuthProvider = {
         membershipsResult.data
           ?.filter((row) => row.user_id === session.user.id)
           ?.map((row) => {
-            const orgData = Array.isArray(row.org) ? row.org[0] : row.org;
+            const orgData = Array.isArray(row.organization)
+              ? row.organization[0]
+              : row.organization;
             return {
-              orgId: row.org_id,
+              orgId: row.organization_id,
               role: row.role,
               org: {
-                id: orgData?.id ?? row.org_id,
+                id: orgData?.id ?? row.organization_id,
                 name: orgData?.name ?? "",
                 slug: orgData?.slug ?? "",
               },
             };
           }) ?? [];
 
-      const isPlatformAdmin = await fetchIsPlatformAdmin(session.user.id);
+      const isSuperAdmin = await fetchIsSuperAdmin(session.user.id);
 
       return {
         userId: session.user.id,
         email: session.user.email,
         memberships,
-        isPlatformAdmin,
+        isPlatformAdmin: isSuperAdmin,
+        isSuperAdmin,
       };
     } catch (error) {
       console.error("Failed to resolve permissions", error);

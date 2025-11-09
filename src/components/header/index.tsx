@@ -29,7 +29,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   const { token } = useToken();
   const { data: user } = useGetIdentity<IUser>();
   const { mode, setMode } = useContext(ColorModeContext);
-  const { isPlatformAdmin, activeMembership } = useOrg();
+  const { isSuperAdmin, activeMembership } = useOrg();
 
   const headerStyles: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
@@ -53,7 +53,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
         {activeMembership?.org && (
           <Tag color="blue">{activeMembership.org.slug}</Tag>
         )}
-        {isPlatformAdmin && <Tag color="geekblue">Platform Admin</Tag>}
+        {isSuperAdmin && <Tag color="geekblue">Super Admin</Tag>}
       </Space>
       <Space>
         <Switch

@@ -1,6 +1,6 @@
-import { List, useTable, EditButton } from "@refinedev/antd";
+import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
-import { Alert, Table } from "antd";
+import { Alert, Space, Table } from "antd";
 import { useMemo } from "react";
 import { useOrg } from "../../contexts/org";
 
@@ -9,12 +9,13 @@ const EVENT_DOMAINS_META = {
 } as const;
 
 export const EventDomainsList: React.FC<IResourceComponentsProps> = () => {
-  const { activeMembership, loading } = useOrg();
+  const { activeMembership, loading, isPlatformAdmin } = useOrg();
   const orgId = activeMembership?.orgId;
   const canManage = useMemo(
     () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
     [activeMembership?.role]
   );
+  const canDelete = isPlatformAdmin || canManage;
 
   const tableConfig = useMemo(
     () => ({
@@ -65,12 +66,20 @@ export const EventDomainsList: React.FC<IResourceComponentsProps> = () => {
         <Table.Column
           title="Actions"
           render={(_, record: { host: string }) => (
-            <EditButton
-              hideText
-              size="small"
-              recordItemId={record.host}
-              disabled={!canManage}
-            />
+            <Space>
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record.host}
+                disabled={!canManage}
+              />
+              <DeleteButton
+                hideText
+                size="small"
+                recordItemId={record.host}
+                disabled={!canDelete}
+              />
+            </Space>
           )}
         />
       </Table>
