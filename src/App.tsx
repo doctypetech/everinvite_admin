@@ -16,7 +16,23 @@ import routerProvider, {
 } from "@refinedev/react-router";
 import { App as AntdApp } from "antd";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
-import { Fragment, useMemo } from "react";
+import {
+  Fragment,
+  useMemo,
+  type ReactNode,
+} from "react";
+import {
+  AppstoreOutlined,
+  CalendarOutlined,
+  CloudUploadOutlined,
+  FileTextOutlined,
+  IdcardOutlined,
+  LayoutOutlined,
+  QuestionCircleOutlined,
+  TeamOutlined,
+  UsergroupAddOutlined,
+  BulbOutlined,
+} from "@ant-design/icons";
 import authProvider from "./authProvider";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
@@ -27,6 +43,7 @@ import { liveProvider } from "@refinedev/supabase";
 import { LoginPage } from "./pages/auth/Login";
 import { GenericCreate, GenericEdit, GenericList } from "./pages/resources";
 import { supabaseClient } from "./utility";
+import "./styles/menu.css";
 import {
   RESOURCE_DEFINITIONS,
   type ResourceDefinition,
@@ -40,6 +57,44 @@ import { ResourceGroupPage } from "./pages/groups";
 const dataProvider = createDataProvider();
 const realtimeProvider = liveProvider(supabaseClient);
 
+const GROUP_ICON_MAP: Record<string, ReactNode> = {
+  event: <CalendarOutlined />,
+  template: <LayoutOutlined />,
+  organization: <TeamOutlined />,
+  profile: <IdcardOutlined />,
+  "event-content": <FileTextOutlined />,
+  invitees: <UsergroupAddOutlined />,
+  imports: <CloudUploadOutlined />,
+  trivia: <BulbOutlined />,
+  faq: <QuestionCircleOutlined />,
+};
+
+const RESOURCE_ICON_MAP: Record<string, ReactNode> = {
+  events: <CalendarOutlined />,
+  event_translations: <CalendarOutlined />,
+  templates: <LayoutOutlined />,
+  template_translations: <LayoutOutlined />,
+  organizations: <TeamOutlined />,
+  organization_members: <TeamOutlined />,
+  org_aliases: <TeamOutlined />,
+  profiles: <IdcardOutlined />,
+  event_content: <FileTextOutlined />,
+  event_content_translations: <FileTextOutlined />,
+  invitees: <UsergroupAddOutlined />,
+  invitee_rsvps: <UsergroupAddOutlined />,
+  import_batches: <CloudUploadOutlined />,
+  import_invitee_rows: <CloudUploadOutlined />,
+  trivia_questions: <BulbOutlined />,
+  trivia_options: <BulbOutlined />,
+  trivia_answers: <BulbOutlined />,
+  trivia_question_translations: <BulbOutlined />,
+  trivia_option_translations: <BulbOutlined />,
+  faq: <QuestionCircleOutlined />,
+  faq_translations: <QuestionCircleOutlined />,
+};
+
+const defaultIcon = <AppstoreOutlined />;
+
 const mapResourceToRefine = (definition: ResourceDefinition) => ({
   name: definition.name,
   list: definition.routes.list,
@@ -48,24 +103,31 @@ const mapResourceToRefine = (definition: ResourceDefinition) => ({
   meta: {
     label: definition.label,
     hide: true,
+    icon: RESOURCE_ICON_MAP[definition.name] ?? defaultIcon,
   },
   options: {
     label: definition.label,
+    icon: RESOURCE_ICON_MAP[definition.name] ?? defaultIcon,
   },
   canDelete: definition.canDelete !== false,
 });
 
-const mapGroupToRefine = (definition: ResourceGroupDefinition) => ({
-  name: definition.name,
-  list: definition.route,
-  meta: {
-    label: definition.label,
-  },
-  options: {
-    label: definition.label,
-  },
-  canDelete: false,
-});
+const mapGroupToRefine = (definition: ResourceGroupDefinition) => {
+  const resourceName = `group:${definition.name}`;
+  return {
+    name: resourceName,
+    list: definition.route,
+    meta: {
+      label: definition.label,
+      icon: GROUP_ICON_MAP[definition.name] ?? defaultIcon,
+    },
+    options: {
+      label: definition.label,
+      icon: GROUP_ICON_MAP[definition.name] ?? defaultIcon,
+    },
+    canDelete: false,
+  };
+};
 
 const stripAdminPrefix = (path?: string) =>
   path?.replace(/^\/?admin\/?/, "") ?? undefined;

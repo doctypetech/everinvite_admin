@@ -125,3 +125,14 @@ export const RESOURCE_GROUP_DEFINITION_MAP: Record<
   return acc;
 }, {} as Record<string, ResourceGroupDefinition>);
 
+export const RESOURCE_GROUP_ROUTE_BY_RESOURCE: Record<string, string> =
+  RESOURCE_GROUP_DEFINITIONS.reduce(
+    (acc, definition) => {
+      definition.sections.forEach((section) => {
+        acc[section.resource] = definition.route;
+      });
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+

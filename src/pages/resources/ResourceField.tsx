@@ -9,6 +9,38 @@ type ResourceFieldProps = {
   mode: Mode;
 };
 
+const getFieldPlaceholder = (field: FieldDefinition) => {
+  if (field.placeholder) {
+    return field.placeholder;
+  }
+
+  if (typeof field.helperText === "string" && field.helperText.trim().length) {
+    return field.helperText;
+  }
+
+  if (typeof field.defaultValue === "string" && field.defaultValue.trim().length) {
+    return field.defaultValue;
+  }
+
+  const normalizedLabel = field.label.toLowerCase();
+
+  switch (field.type) {
+    case "json":
+      return 'Enter JSON, e.g. {"key": "value"}';
+    case "textarea":
+    case "text":
+      return `Enter ${normalizedLabel}`;
+    case "number":
+      return `Enter ${normalizedLabel}`;
+    case "datetime":
+      return `Select ${normalizedLabel}`;
+    case "select":
+      return `Select ${normalizedLabel}`;
+    default:
+      return undefined;
+  }
+};
+
 export const ResourceField: React.FC<ResourceFieldProps> = ({
   field,
   mode,
@@ -25,6 +57,8 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
         },
       ]
     : undefined;
+
+  const placeholder = getFieldPlaceholder(field);
 
   if (field.type === "boolean") {
     return (
@@ -56,6 +90,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
           min={field.min}
           max={field.max}
           step={field.step}
+          placeholder={placeholder}
         />
       </Form.Item>
     );
@@ -74,6 +109,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
           showTime
           style={{ width: "100%" }}
           disabled={isDisabled}
+          placeholder={placeholder}
         />
       </Form.Item>
     );
@@ -101,6 +137,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
             disabled={isDisabled}
             allowClear={!field.required}
             showSearch
+            placeholder={selectProps.placeholder ?? placeholder}
           />
         </Form.Item>
       );
@@ -118,6 +155,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
           disabled={isDisabled}
           allowClear={!field.required}
           options={field.enumValues}
+          placeholder={placeholder}
         />
       </Form.Item>
     );
@@ -134,9 +172,13 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
       tooltip={field.helperText}
     >
       {isTextArea ? (
-        <Input.TextArea rows={field.type === "json" ? 8 : 4} disabled={isDisabled} />
+        <Input.TextArea
+          rows={field.type === "json" ? 8 : 4}
+          disabled={isDisabled}
+          placeholder={placeholder}
+        />
       ) : (
-        <Input disabled={isDisabled} />
+        <Input disabled={isDisabled} placeholder={placeholder} />
       )}
     </Form.Item>
   );

@@ -9,6 +9,13 @@ const ROLE_LABELS: Record<string, string> = {
   viewer: "Viewer",
 };
 
+const ROLE_COLORS: Record<string, string> = {
+  owner: "purple",
+  admin: "geekblue",
+  editor: "cyan",
+  viewer: "blue",
+};
+
 export const OrgSwitcher = () => {
   const {
     memberships,
@@ -56,9 +63,26 @@ export const OrgSwitcher = () => {
     ...options.map(({ value, label, role }) => ({
       value,
       label: (
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <span>{label}</span>
-          <Tag>{ROLE_LABELS[role] ?? role}</Tag>
+          <Tag
+            color={ROLE_COLORS[role] ?? ROLE_COLORS.viewer}
+            style={{
+              marginInlineStart: 8,
+              minWidth: 72,
+              display: "inline-flex",
+              justifyContent: "center",
+            }}
+          >
+            {ROLE_LABELS[role] ?? role}
+          </Tag>
         </div>
       ),
     })),

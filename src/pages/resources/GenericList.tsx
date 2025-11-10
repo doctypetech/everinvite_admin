@@ -29,6 +29,7 @@ export const GenericList: React.FC = () => {
   );
 
   const { tableProps } = useTable({
+    resource: resourceName,
     meta: definition?.list?.meta,
     sorters: {
       initial: definition?.list?.initialSorters,
@@ -69,7 +70,7 @@ export const GenericList: React.FC = () => {
   }
 
   return (
-    <List title={definition.label}>
+    <List title={definition.label} resource={definition.name}>
       <Table
         {...tableProps}
         rowKey={(record) => getRecordId(record as Record<string, any>)}
@@ -95,11 +96,17 @@ export const GenericList: React.FC = () => {
             const recordId = getRecordId(record);
             return (
               <Space>
-                <EditButton size="small" hideText recordItemId={recordId} />
+                <EditButton
+                  size="small"
+                  hideText
+                  resource={definition.name}
+                  recordItemId={recordId}
+                />
                 {definition.canDelete !== false && (
                   <DeleteButton
                     size="small"
                     hideText
+                    resource={definition.name}
                     recordItemId={recordId}
                   />
                 )}

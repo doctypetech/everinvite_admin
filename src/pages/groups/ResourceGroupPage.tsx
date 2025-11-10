@@ -1,4 +1,5 @@
 import { Result, Tabs, Typography } from "antd";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   RESOURCE_GROUP_DEFINITION_MAP,
@@ -40,23 +41,36 @@ export const ResourceGroupPage: React.FC<ResourceGroupPageProps> = ({
     );
   }
 
-  const items = definition.sections.map((section) => ({
-    key: section.resource,
-    label: section.title ?? section.resource,
-    children: (
-      <ResourceSection
-        resourceName={section.resource}
-        title={section.title}
-      />
-    ),
-  }));
+  const firstSectionKey = definition.sections[0]?.resource ?? "";
+
+  const [activeKey, setActiveKey] = useState<string>(firstSectionKey);
+
+  useEffect(() => {
+    setActiveKey(firstSectionKey);
+  }, [firstSectionKey, groupName]);
+
+  const items = useMemo(
+    () =>
+      definition.sections.map((section) => ({
+        key: section.resource,
+        label: section.title ?? section.resource,
+        children: (
+          <ResourceSection
+            resourceName={section.resource}
+            title={section.title}
+          />
+        ),
+      })),
+    [definition.sections]
+  );
 
   return (
     <div style={{ width: "100%", marginTop: 16 }}>
       {renderHeader(definition)}
       <Tabs
         style={{ marginTop: 16 }}
-        defaultActiveKey={definition.sections[0]?.resource}
+        activeKey={activeKey}
+        onChange={setActiveKey}
         destroyInactiveTabPane={false}
         items={items}
       />

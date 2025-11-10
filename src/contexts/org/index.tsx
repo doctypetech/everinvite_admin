@@ -179,6 +179,8 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
         let resolvedMemberships = mapped;
         let preserveNull = false;
 
+        const noOrgSelected = activeOrgId == null;
+
         if (superAdminFlag || resolvedMemberships.length === 0) {
           try {
             const { data: orgRows, error: orgError } = await supabaseClient
@@ -202,7 +204,9 @@ export const OrgProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         setMemberships(resolvedMemberships);
-        syncActiveOrg(resolvedMemberships, { preserveNull });
+        syncActiveOrg(resolvedMemberships, {
+          preserveNull: preserveNull || noOrgSelected,
+        });
 
         setIsSuperAdmin(superAdminFlag);
       } catch (error) {

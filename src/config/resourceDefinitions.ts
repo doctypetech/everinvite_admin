@@ -29,6 +29,7 @@ export interface FieldDefinition {
   label: string;
   type: FieldType;
   required?: boolean;
+  placeholder?: string;
   enumValues?: FieldOption[];
   relation?: FieldRelation;
   helperText?: ReactNode;

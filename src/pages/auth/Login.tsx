@@ -40,12 +40,16 @@ export const LoginPage = () => {
   };
 
   return (
-    <Space
-      direction="vertical"
-      align="center"
-      style={{ width: "100%", marginTop: "10vh" }}
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+      }}
     >
-      <Card style={{ width: 360 }}>
+      <Card style={{ width: 360, boxShadow: "0 12px 40px rgba(0, 0, 0, 0.08)" }}>
         <Typography.Title level={4} style={{ textAlign: "center" }}>
           Admin Login
         </Typography.Title>
@@ -90,7 +94,7 @@ export const LoginPage = () => {
           </Button>
         </Form>
       </Card>
-    </Space>
+    </div>
   );
 };
 

@@ -6,6 +6,9 @@ import {
   type ResourceDefinition,
 } from "../../config/resourceDefinitions";
 import { ResourceForm } from "./ResourceForm";
+import { useOrg } from "../../contexts/org";
+import { useNavigate } from "react-router";
+import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -15,9 +18,23 @@ export const GenericCreate: React.FC = () => {
   const resourceName =
     typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
+  const { setActiveOrgId } = useOrg();
+  const navigate = useNavigate();
+  const groupRoute =
+    resourceName && RESOURCE_GROUP_ROUTE_BY_RESOURCE[resourceName];
 
   const { formProps, saveButtonProps } = useForm({
+    resource: resourceName,
     meta: definition?.form?.meta,
+    redirect: false,
+    onMutationSuccess: () => {
+      if (resourceName === "organizations") {
+        setActiveOrgId(null);
+      }
+      const target =
+        groupRoute ?? definition?.routes.list ?? "/admin";
+      navigate(target, { replace: true });
+    },
   });
 
   if (!definition) {
@@ -31,7 +48,11 @@ export const GenericCreate: React.FC = () => {
   }
 
   return (
-    <Create title={`Create ${definition.label}`} saveButtonProps={saveButtonProps}>
+    <Create
+      title={`Create ${definition.label}`}
+      saveButtonProps={saveButtonProps}
+      resource={definition.name}
+    >
       <ResourceForm fields={definition.form.fields} mode="create" formProps={formProps} />
     </Create>
   );

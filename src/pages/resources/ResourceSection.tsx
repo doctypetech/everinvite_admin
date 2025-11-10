@@ -116,14 +116,14 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
                 <EditButton
                   size="small"
                   hideText
-                  resourceNameOrRouteName={resourceName}
+                  resource={resourceName}
                   recordItemId={recordId}
                 />
                 {definition.canDelete !== false && (
                   <DeleteButton
                     size="small"
                     hideText
-                    resourceNameOrRouteName={resourceName}
+                    resource={resourceName}
                     recordItemId={recordId}
                   />
                 )}
