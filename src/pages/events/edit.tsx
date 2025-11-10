@@ -11,8 +11,8 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
 import { useSelect } from "@refinedev/antd";
+import { usePlatformAccess } from "../../contexts/org";
 
 const STATUS_OPTIONS = [
   { label: "Draft", value: "draft" },
@@ -21,12 +21,8 @@ const STATUS_OPTIONS = [
 ];
 
 export const EventsEdit = () => {
-  const { activeMembership } = useOrg();
-  const orgId = activeMembership?.orgId;
-  const canManage = useMemo(
-    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
-    [activeMembership?.role]
-  );
+  const { isPlatformAdmin, loading } = usePlatformAccess();
+  const canManage = isPlatformAdmin;
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "events",
@@ -65,6 +61,15 @@ export const EventsEdit = () => {
     },
   });
 
+  const { selectProps: orgSelectProps } = useSelect({
+    resource: "organizations",
+    optionLabel: "name",
+    optionValue: "id",
+    queryOptions: {
+      enabled: !loading,
+    },
+  });
+
   const { result: templateRecord } = useOne({
     resource: "templates",
     id: currentTemplateId,
@@ -93,7 +98,7 @@ export const EventsEdit = () => {
 
   const handleFinish = async (values: any) => {
     const resolvedOrgId =
-      values.org_id ?? formProps.initialValues?.org_id ?? orgId;
+      values.org_id ?? formProps.initialValues?.org_id;
 
     const payload = {
       ...values,
@@ -105,22 +110,12 @@ export const EventsEdit = () => {
     return onFinish?.(payload);
   };
 
-  if (!orgId) {
-    return (
-      <Alert
-        type="info"
-        message="No organization selected"
-        description="Select an organization to manage events."
-      />
-    );
-  }
-
   if (!canManage) {
     return (
       <Alert
         type="warning"
         message="Insufficient permissions"
-        description="You need owner, admin, or editor access to edit events."
+        description="Only platform admins can edit events."
       />
     );
   }
@@ -138,6 +133,18 @@ export const EventsEdit = () => {
         onFinish={handleFinish}
         initialValues={initialValues}
       >
+        <Form.Item
+          label="Organization"
+          name="org_id"
+          rules={[{ required: true, message: "Organization is required" }]}
+        >
+          <Select
+            placeholder="Select organization"
+            {...orgSelectProps}
+            loading={orgSelectProps.loading}
+          />
+        </Form.Item>
+
         <Form.Item
           label="Slug"
           name="slug"

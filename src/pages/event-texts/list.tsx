@@ -2,7 +2,7 @@ import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Space, Table } from "antd";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const EVENT_TEXTS_META = {
   select:
@@ -10,13 +10,8 @@ const EVENT_TEXTS_META = {
 } as const;
 
 export const EventTextsList: React.FC<IResourceComponentsProps> = () => {
-  const { activeMembership, loading, isPlatformAdmin } = useOrg();
-  const orgId = activeMembership?.orgId;
-  const canManage = useMemo(
-    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
-    [activeMembership?.role]
-  );
-  const canDelete = isPlatformAdmin || canManage;
+  const { loading, isPlatformAdmin } = usePlatformAccess();
+  const canManage = isPlatformAdmin;
 
   const tableConfig = useMemo(
     () => ({
@@ -35,8 +30,6 @@ export const EventTextsList: React.FC<IResourceComponentsProps> = () => {
     return null;
   }
 
-  const showOrgWarning = !orgId;
-
   return (
     <List
       title="Event Texts"
@@ -44,16 +37,16 @@ export const EventTextsList: React.FC<IResourceComponentsProps> = () => {
         disabled: !canManage,
         title: canManage
           ? undefined
-          : "Only owner/admin/editor roles can create event copy",
+          : "Only platform admins can create event copy",
       }}
     >
-      {showOrgWarning && (
+      {!canManage && (
         <Alert
-          type="info"
+          type="warning"
           showIcon
           style={{ marginBottom: 16 }}
-          message="No organization selected"
-          description="Select an organization to manage private drafts. You can still view live public copies."
+          message="Restricted resource"
+          description="Only platform admins can manage event texts."
         />
       )}
       <Table
@@ -90,7 +83,7 @@ export const EventTextsList: React.FC<IResourceComponentsProps> = () => {
                   event_id: record.event_id,
                   locale: record.locale,
                 }}
-                disabled={!canDelete}
+                disabled={!canManage}
               />
             </Space>
           )}

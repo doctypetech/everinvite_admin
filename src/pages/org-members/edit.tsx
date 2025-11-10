@@ -1,7 +1,7 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { Alert, Form, Select } from "antd";
 import { useParams } from "react-router";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const ROLE_OPTIONS = [
   { label: "Owner", value: "owner" },
@@ -11,7 +11,7 @@ const ROLE_OPTIONS = [
 ];
 
 export const OrgMembersEdit = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
   const { id } = useParams<{ id: string }>();
 
   const { formProps, saveButtonProps, onFinish } = useForm({

@@ -145,60 +145,18 @@ const authProvider: AuthProvider = {
   },
   getPermissions: async () => {
     try {
-      const [{ data: sessionData }, membershipsResult] =
-        await Promise.all([
-          supabaseClient.auth.getSession(),
-          supabaseClient
-            .from("organization_members")
-            .select(
-              `
-                organization_id,
-                user_id,
-                role,
-                organization:organizations (
-                  id,
-                  name,
-                  slug
-                )
-              `
-            )
-            .order("created_at", { ascending: true }),
-        ]);
-
+      const { data: sessionData } = await supabaseClient.auth.getSession();
       const session = sessionData.session;
 
       if (!session?.user) {
         return null;
       }
 
-      if (membershipsResult.error) {
-        throw membershipsResult.error;
-      }
-
-      const memberships =
-        membershipsResult.data
-          ?.filter((row) => row.user_id === session.user.id)
-          ?.map((row) => {
-            const orgData = Array.isArray(row.organization)
-              ? row.organization[0]
-              : row.organization;
-            return {
-              orgId: row.organization_id,
-              role: row.role,
-              org: {
-                id: orgData?.id ?? row.organization_id,
-                name: orgData?.name ?? "",
-                slug: orgData?.slug ?? "",
-              },
-            };
-          }) ?? [];
-
       const isSuperAdmin = await fetchIsSuperAdmin(session.user.id);
 
       return {
         userId: session.user.id,
         email: session.user.email,
-        memberships,
         isPlatformAdmin: isSuperAdmin,
         isSuperAdmin,
       };

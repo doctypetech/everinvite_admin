@@ -2,7 +2,7 @@ import { DeleteButton, List, useTable } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Table, Typography } from "antd";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 import { useUserEmailLookup } from "../../hooks/useUserEmailLookup";
 
 const PLATFORM_ADMINS_META = {
@@ -10,7 +10,7 @@ const PLATFORM_ADMINS_META = {
 } as const;
 
 export const PlatformAdminsList: React.FC<IResourceComponentsProps> = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const tableConfig = useMemo(
     () => ({

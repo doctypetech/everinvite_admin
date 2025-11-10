@@ -1,9 +1,9 @@
 import { Create, useForm } from "@refinedev/antd";
 import { Alert, Form, Input, InputNumber } from "antd";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 export const EventTypesCreate = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "event_types",

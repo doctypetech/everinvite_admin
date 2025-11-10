@@ -1,7 +1,6 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { Alert, Form, Input, InputNumber, Select } from "antd";
-import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const STATUS_OPTIONS = [
   { label: "Visible", value: "visible" },
@@ -10,12 +9,8 @@ const STATUS_OPTIONS = [
 ];
 
 export const PhotosEdit = () => {
-  const { activeMembership } = useOrg();
-  const orgId = activeMembership?.orgId;
-  const canManage = useMemo(
-    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
-    [activeMembership?.role]
-  );
+  const { isPlatformAdmin, loading } = usePlatformAccess();
+  const canManage = isPlatformAdmin;
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "photos",
@@ -29,17 +24,8 @@ export const PhotosEdit = () => {
     resource: "events",
     optionLabel: "slug",
     optionValue: "id",
-    filters: orgId
-      ? [
-          {
-            field: "org_id",
-            operator: "eq",
-            value: orgId,
-          },
-        ]
-      : [],
     queryOptions: {
-      enabled: Boolean(orgId),
+      enabled: !loading,
     },
   });
 
@@ -51,22 +37,12 @@ export const PhotosEdit = () => {
     return onFinish?.(values);
   };
 
-  if (!orgId) {
-    return (
-      <Alert
-        type="info"
-        message="No organization selected"
-        description="Select an organization to manage photos."
-      />
-    );
-  }
-
   if (!canManage) {
     return (
       <Alert
         type="warning"
         message="Insufficient permissions"
-        description="You need owner, admin, or editor access to edit photos."
+        description="Only platform admins can edit photos."
       />
     );
   }

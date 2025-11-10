@@ -1,18 +1,8 @@
 import type { RefineThemedLayoutHeaderProps } from "@refinedev/antd";
 import { useGetIdentity } from "@refinedev/core";
-import {
-  Layout as AntdLayout,
-  Avatar,
-  Space,
-  Switch,
-  Tag,
-  theme,
-  Typography,
-} from "antd";
+import { Layout as AntdLayout, Avatar, Space, Switch, theme, Typography } from "antd";
 import React, { useContext } from "react";
 import { ColorModeContext } from "../../contexts/color-mode";
-import { OrgSwitcher } from "../org/OrgSwitcher";
-import { useOrg } from "../../contexts/org";
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -29,7 +19,6 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   const { token } = useToken();
   const { data: user } = useGetIdentity<IUser>();
   const { mode, setMode } = useContext(ColorModeContext);
-  const { isSuperAdmin, activeMembership, memberships, loading } = useOrg();
 
   const headerStyles: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
@@ -48,17 +37,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
 
   return (
     <AntdLayout.Header style={headerStyles}>
-      <Space size="middle">
-        <OrgSwitcher />
-        {!loading && memberships.length > 0 && (
-          <Tag color="blue">
-            {activeMembership?.org
-              ? activeMembership.org.slug || activeMembership.org.name
-              : "All organizations"}
-          </Tag>
-        )}
-        {isSuperAdmin && <Tag color="geekblue">Super Admin</Tag>}
-      </Space>
+      <div />
       <Space>
         <Switch
           checkedChildren="🌛"

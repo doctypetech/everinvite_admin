@@ -6,8 +6,7 @@ import {
   RESOURCE_DEFINITION_MAP,
   type ResourceDefinition,
 } from "../../config/resourceDefinitions";
-import { useOrg } from "../../contexts/org";
-import { formatCellValue, resolveOrgFilterField } from "./helpers";
+import { formatCellValue } from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -17,9 +16,6 @@ export const GenericList: React.FC = () => {
   const resourceName =
     typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
-  const { activeMembership } = useOrg();
-  const activeOrgId = activeMembership?.orgId ?? null;
-  const orgFilterField = resolveOrgFilterField(definition);
 
   const getRecordId = useMemo(
     () =>
@@ -36,16 +32,6 @@ export const GenericList: React.FC = () => {
     },
     filters: {
       initial: definition?.list?.initialFilters,
-      permanent:
-        orgFilterField && activeOrgId
-          ? [
-              {
-                field: orgFilterField,
-                operator: "eq",
-                value: activeOrgId,
-              },
-            ]
-          : undefined,
     },
   });
 

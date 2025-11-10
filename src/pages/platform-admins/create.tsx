@@ -1,9 +1,9 @@
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { Alert, Form, Select } from "antd";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 export const PlatformAdminsCreate = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "platform_admins",

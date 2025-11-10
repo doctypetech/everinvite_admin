@@ -2,14 +2,14 @@ import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Space, Table } from "antd";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const EVENT_TYPES_META = {
   select: "id, key, name, sort_order, created_at",
 } as const;
 
 export const EventTypesList: React.FC<IResourceComponentsProps> = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const tableConfig = useMemo(
     () => ({

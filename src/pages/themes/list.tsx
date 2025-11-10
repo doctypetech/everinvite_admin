@@ -2,7 +2,7 @@ import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Space, Table } from "antd";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const THEMES_META = {
   select:
@@ -10,7 +10,7 @@ const THEMES_META = {
 } as const;
 
 export const ThemesList: React.FC<IResourceComponentsProps> = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const tableConfig = useMemo(
     () => ({

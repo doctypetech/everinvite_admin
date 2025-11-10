@@ -1,6 +1,6 @@
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { Alert, Form, Select } from "antd";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const ROLE_OPTIONS = [
   { label: "Owner", value: "owner" },
@@ -10,7 +10,7 @@ const ROLE_OPTIONS = [
 ];
 
 export const OrgMembersCreate = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "org_members",

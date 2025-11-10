@@ -37,7 +37,6 @@ import {
 import authProvider from "./authProvider";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
-import { OrgProvider } from "./contexts/org";
 import { accessControlProvider } from "./accessControlProvider";
 import { createDataProvider } from "./providers/dataProvider";
 import { liveProvider } from "@refinedev/supabase";
@@ -184,14 +183,12 @@ function App() {
                       key="authenticated-inner"
                       fallback={<CatchAllNavigate to="/admin/login" />}
                     >
-                      <OrgProvider>
-                        <ThemedLayout
-                          Header={Header}
-                          Sider={(props) => <ThemedSider {...props} fixed />}
-                        >
-                          <Outlet />
-                        </ThemedLayout>
-                      </OrgProvider>
+                      <ThemedLayout
+                        Header={Header}
+                        Sider={(props) => <ThemedSider {...props} fixed />}
+                      >
+                        <Outlet />
+                      </ThemedLayout>
                     </Authenticated>
                   }
                 >

@@ -2,7 +2,7 @@ import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { CrudFilters, CrudSort, IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Space, Table, Tag, Typography } from "antd";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "default",
@@ -23,54 +23,30 @@ const EVENTS_SORTERS: CrudSort[] = [
 ];
 
 export const EventsList: React.FC<IResourceComponentsProps> = () => {
-  const { activeMembership, loading, isPlatformAdmin } = useOrg();
-  const orgId = activeMembership?.orgId;
-  const canManage = useMemo(
-    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
-    [activeMembership?.role]
-  );
-  const canDelete = isPlatformAdmin || canManage;
+  const { loading, isPlatformAdmin } = usePlatformAccess();
+  const canManage = isPlatformAdmin;
 
-  const tableConfig = useMemo(() => {
-    const initialFilters: CrudFilters = orgId
-      ? [
-          {
-            field: "org_id",
-            operator: "eq",
-            value: orgId,
-          },
-        ]
-      : [];
-
-    return {
+  const tableConfig = useMemo(
+    () => ({
       resource: "events",
       meta: EVENTS_META,
       filters: {
-        initial: initialFilters,
+        initial: [] as CrudFilters,
       },
       sorters: {
         initial: EVENTS_SORTERS,
       },
       queryOptions: {
-        enabled: Boolean(orgId) && !loading,
+        enabled: !loading,
       },
-    };
-  }, [orgId, loading]);
+    }),
+    [loading]
+  );
 
   const { tableProps } = useTable(tableConfig);
 
   if (loading) {
     return null;
-  }
-
-  if (!orgId) {
-    return (
-      <Alert
-        type="info"
-        message="No organization selected"
-        description="Join an organization or ask an owner to invite you first."
-      />
-    );
   }
 
   return (
@@ -80,9 +56,18 @@ export const EventsList: React.FC<IResourceComponentsProps> = () => {
         disabled: !canManage,
         title: canManage
           ? undefined
-          : "Only owner/admin/editor roles can create events",
+          : "Only platform admins can create events",
       }}
     >
+      {!canManage && (
+        <Alert
+          type="warning"
+          message="Restricted resource"
+          description="Only platform admins can manage events."
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
       <Table {...tableProps} rowKey="id">
         <Table.Column dataIndex="slug" title="Slug" />
         <Table.Column
@@ -122,7 +107,7 @@ export const EventsList: React.FC<IResourceComponentsProps> = () => {
                 size="small"
                 hideText
                 recordItemId={record.id}
-                disabled={!canDelete}
+                disabled={!canManage}
               />
             </Space>
           )}

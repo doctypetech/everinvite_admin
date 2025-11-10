@@ -1,16 +1,11 @@
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { Alert, DatePicker, Form, Input, InputNumber, Select } from "antd";
 import dayjs from "dayjs";
-import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 export const UploadTokensCreate = () => {
-  const { activeMembership } = useOrg();
-  const orgId = activeMembership?.orgId;
-  const canManage = useMemo(
-    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
-    [activeMembership?.role]
-  );
+  const { isPlatformAdmin, loading } = usePlatformAccess();
+  const canManage = isPlatformAdmin;
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "upload_tokens",
@@ -21,17 +16,8 @@ export const UploadTokensCreate = () => {
     resource: "events",
     optionLabel: "slug",
     optionValue: "id",
-    filters: orgId
-      ? [
-          {
-            field: "org_id",
-            operator: "eq",
-            value: orgId,
-          },
-        ]
-      : [],
     queryOptions: {
-      enabled: Boolean(orgId),
+      enabled: !loading,
     },
   });
 
@@ -51,22 +37,12 @@ export const UploadTokensCreate = () => {
     return onFinish?.(payload);
   };
 
-  if (!orgId) {
-    return (
-      <Alert
-        type="info"
-        message="No organization selected"
-        description="Select an organization to manage upload tokens."
-      />
-    );
-  }
-
   if (!canManage) {
     return (
       <Alert
         type="warning"
         message="Insufficient permissions"
-        description="You need owner, admin, or editor access to create upload tokens."
+        description="Only platform admins can create upload tokens."
       />
     );
   }

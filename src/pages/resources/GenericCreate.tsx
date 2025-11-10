@@ -6,7 +6,6 @@ import {
   type ResourceDefinition,
 } from "../../config/resourceDefinitions";
 import { ResourceForm } from "./ResourceForm";
-import { useOrg } from "../../contexts/org";
 import { useNavigate } from "react-router";
 import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
 
@@ -18,7 +17,6 @@ export const GenericCreate: React.FC = () => {
   const resourceName =
     typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
-  const { setActiveOrgId } = useOrg();
   const navigate = useNavigate();
   const groupRoute =
     resourceName && RESOURCE_GROUP_ROUTE_BY_RESOURCE[resourceName];
@@ -28,9 +26,6 @@ export const GenericCreate: React.FC = () => {
     meta: definition?.form?.meta,
     redirect: false,
     onMutationSuccess: () => {
-      if (resourceName === "organizations") {
-        setActiveOrgId(null);
-      }
       const target =
         groupRoute ?? definition?.routes.list ?? "/admin";
       navigate(target, { replace: true });

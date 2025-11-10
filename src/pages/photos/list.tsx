@@ -2,7 +2,7 @@ import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Space, Table, Tag } from "antd";
 import { useMemo } from "react";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 const STATUS_COLOR: Record<string, string> = {
   visible: "green",
@@ -15,13 +15,8 @@ const PHOTOS_META = {
 } as const;
 
 export const PhotosList: React.FC<IResourceComponentsProps> = () => {
-  const { activeMembership, loading, isPlatformAdmin } = useOrg();
-  const orgId = activeMembership?.orgId;
-  const canManage = useMemo(
-    () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
-    [activeMembership?.role]
-  );
-  const canDelete = isPlatformAdmin || canManage;
+  const { loading, isPlatformAdmin } = usePlatformAccess();
+  const canManage = isPlatformAdmin;
 
   const tableConfig = useMemo(
     () => ({
@@ -40,8 +35,6 @@ export const PhotosList: React.FC<IResourceComponentsProps> = () => {
     return null;
   }
 
-  const showOrgWarning = !orgId;
-
   return (
     <List
       title="Guest Photos"
@@ -49,16 +42,16 @@ export const PhotosList: React.FC<IResourceComponentsProps> = () => {
         disabled: !canManage,
         title: canManage
           ? undefined
-          : "Only owner/admin/editor roles can upload photos",
+          : "Only platform admins can upload photos",
       }}
     >
-      {showOrgWarning && (
+      {!canManage && (
         <Alert
-          type="info"
+          type="warning"
           showIcon
           style={{ marginBottom: 16 }}
-          message="No organization selected"
-          description="Select an organization to manage private photos."
+          message="Restricted resource"
+          description="Only platform admins can manage guest photos."
         />
       )}
       <Table {...tableProps} rowKey="id">
@@ -90,7 +83,7 @@ export const PhotosList: React.FC<IResourceComponentsProps> = () => {
                 hideText
                 size="small"
                 recordItemId={record.id}
-                disabled={!canDelete}
+                disabled={!canManage}
               />
             </Space>
           )}

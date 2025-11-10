@@ -1,9 +1,9 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { Alert, Form, Input, message, Select } from "antd";
-import { useOrg } from "../../contexts/org";
+import { usePlatformAccess } from "../../contexts/org";
 
 export const ThemesEdit = () => {
-  const { isPlatformAdmin } = useOrg();
+  const { isPlatformAdmin } = usePlatformAccess();
 
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "themes",

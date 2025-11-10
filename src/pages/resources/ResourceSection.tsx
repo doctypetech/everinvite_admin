@@ -6,8 +6,7 @@ import {
   RESOURCE_DEFINITION_MAP,
   type ResourceDefinition,
 } from "../../config/resourceDefinitions";
-import { useOrg } from "../../contexts/org";
-import { formatCellValue, resolveOrgFilterField } from "./helpers";
+import { formatCellValue } from "./helpers";
 
 const getResourceDefinition = (
   name?: string,
@@ -24,9 +23,6 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
   title,
 }) => {
   const definition = getResourceDefinition(resourceName);
-  const { activeMembership } = useOrg();
-  const activeOrgId = activeMembership?.orgId ?? null;
-  const orgFilterField = resolveOrgFilterField(definition);
 
   const getRecordId = useMemo(
     () =>
@@ -34,20 +30,6 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
       ((record: Record<string, any>) => String(record.id)),
     [definition?.getRecordId],
   );
-
-  const permanentFilters = useMemo(() => {
-    if (!orgFilterField || !activeOrgId) {
-      return [];
-    }
-
-    return [
-      {
-        field: orgFilterField,
-        operator: "eq",
-        value: activeOrgId,
-      },
-    ];
-  }, [orgFilterField, activeOrgId]);
 
   const { tableProps } = useTable({
     resource: resourceName,
@@ -57,7 +39,6 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
     },
     filters: {
       initial: definition?.list?.initialFilters,
-      permanent: permanentFilters,
     },
     syncWithLocation: false,
   });
