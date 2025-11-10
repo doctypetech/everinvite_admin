@@ -5,6 +5,9 @@ import type {
   ResourceDefinition,
 } from "../../config/resourceDefinitions";
 
+const isRecord = (value: unknown): value is Record<string, any> =>
+  typeof value === "object" && value !== null;
+
 export const formatCellValue = (
   value: unknown,
   type: FieldType | undefined
@@ -69,6 +72,80 @@ export const convertInitialValues = (
           clone[field.key] = String(value);
         }
         break;
+      case "themeColors": {
+        const defaultConfig =
+          field.defaultValue && isRecord(field.defaultValue)
+            ? field.defaultValue
+            : {};
+
+        let configValue: Record<string, any>;
+
+        if (typeof value === "string") {
+          try {
+            configValue = JSON.parse(value);
+          } catch {
+            configValue = {};
+          }
+        } else if (isRecord(value)) {
+          configValue = { ...value };
+        } else {
+          configValue = {};
+        }
+
+        const defaultTheme = isRecord(defaultConfig.theme)
+          ? defaultConfig.theme
+          : {};
+        const defaultColors = isRecord(defaultTheme.colors)
+          ? defaultTheme.colors
+          : {};
+        const existingTheme = isRecord(configValue.theme)
+          ? configValue.theme
+          : {};
+        const existingColors = isRecord(existingTheme.colors)
+          ? existingTheme.colors
+          : {};
+
+        const ensureColor = (
+          colorValue: unknown,
+          fallback: string | undefined
+        ) => {
+          if (typeof colorValue === "string" && colorValue.trim().length > 0) {
+            return colorValue.trim();
+          }
+          if (typeof fallback === "string" && fallback.trim().length > 0) {
+            return fallback.trim();
+          }
+          return "#000000";
+        };
+
+        const preparedColors = {
+          primary: ensureColor(
+            existingColors.primary,
+            defaultColors.primary as string | undefined
+          ),
+          secondary: ensureColor(
+            existingColors.secondary,
+            defaultColors.secondary as string | undefined
+          ),
+          main: ensureColor(
+            existingColors.main,
+            defaultColors.main as string | undefined
+          ),
+        };
+
+        clone[field.key] = {
+          ...configValue,
+          theme: {
+            ...(defaultTheme ?? {}),
+            ...(existingTheme ?? {}),
+            colors: {
+              ...(defaultColors ?? {}),
+              ...preparedColors,
+            },
+          },
+        };
+        break;
+      }
       default:
         break;
     }
@@ -131,6 +208,62 @@ export const serializeFormValues = (
         } else {
           output[field.key] = dayjs(rawValue as any).toISOString();
         }
+        break;
+      }
+      case "themeColors": {
+        const defaultConfig =
+          field.defaultValue && isRecord(field.defaultValue)
+            ? field.defaultValue
+            : {};
+
+        const value = rawValue && isRecord(rawValue) ? rawValue : {};
+
+        const existingTheme = isRecord(value.theme) ? value.theme : {};
+        const existingColors = isRecord(existingTheme.colors)
+          ? existingTheme.colors
+          : {};
+        const defaultTheme = isRecord(defaultConfig.theme)
+          ? defaultConfig.theme
+          : {};
+        const defaultColors = isRecord(defaultTheme.colors)
+          ? defaultTheme.colors
+          : {};
+
+        const normalizeColor = (
+          colorValue: unknown,
+          fallback: string | undefined
+        ) => {
+          if (typeof colorValue === "string" && colorValue.trim().length > 0) {
+            return colorValue.trim();
+          }
+          if (typeof fallback === "string" && fallback.trim().length > 0) {
+            return fallback.trim();
+          }
+          return "#000000";
+        };
+
+        const normalizedTheme = {
+          ...(isRecord(value.theme) ? value.theme : {}),
+          colors: {
+            primary: normalizeColor(
+              existingColors.primary,
+              defaultColors.primary as string | undefined
+            ),
+            secondary: normalizeColor(
+              existingColors.secondary,
+              defaultColors.secondary as string | undefined
+            ),
+            main: normalizeColor(
+              existingColors.main,
+              defaultColors.main as string | undefined
+            ),
+          },
+        };
+
+        output[field.key] = {
+          ...value,
+          theme: normalizedTheme,
+        };
         break;
       }
       default:

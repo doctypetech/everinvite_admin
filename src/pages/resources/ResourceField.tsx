@@ -1,5 +1,16 @@
 import { useSelect } from "@refinedev/antd";
-import { DatePicker, Form, Input, InputNumber, Select, Switch } from "antd";
+import {
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Space,
+  Switch,
+  Tabs,
+  Tooltip,
+} from "antd";
+import { InfoCircleOutlined } from "@ant-design/icons";
 import type { FieldDefinition } from "../../config/resourceDefinitions";
 
 type Mode = "create" | "edit";
@@ -162,6 +173,73 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
   }
 
   const isTextArea = field.type === "textarea" || field.type === "json";
+
+  if (field.type === "themeColors") {
+    const colorFields = [
+      { key: "main", label: "Main" },
+      { key: "primary", label: "Primary" },
+      { key: "secondary", label: "Secondary" },
+    ];
+
+    return (
+      <Form.Item
+        key={field.key}
+        label={field.label}
+        colon={true}
+        style={{ marginBottom: 0 }}
+      >
+        <Tabs
+          size="small"
+          items={[
+            {
+              key: "theme-colors",
+              label: (
+                <Space size={4}>
+                  Colors
+                  <Tooltip title="Customize the primary, secondary, and main colors used across this organization.">
+                    <InfoCircleOutlined />
+                  </Tooltip>
+                </Space>
+              ),
+              children: (
+                <Space size={16} style={{ width: "100%" }} align="center" wrap>
+                  {colorFields.map((colorField) => (
+                    <Space key={colorField.key} direction="horizontal" size={8}>
+                      <span style={{ minWidth: 70 }}>{colorField.label}</span>
+                      <Form.Item
+                        name={[field.key, "theme", "colors", colorField.key]}
+                        rules={[
+                          {
+                            required: true,
+                            message: `${colorField.label} color is required`,
+                          },
+                        ]}
+                        colon={false}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input
+                          type="color"
+                          disabled={isDisabled}
+                          style={{
+                            width: 28,
+                            height: 28,
+                            padding: 0,
+                            borderRadius: 4,
+                            border: "1px solid #d9d9d9",
+                            background: "transparent",
+                          }}
+                        />
+                      </Form.Item>
+                    </Space>
+                  ))}
+                </Space>
+              ),
+            },
+          ]}
+        />
+      </Form.Item>
+    );
+  }
 
   return (
     <Form.Item

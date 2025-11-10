@@ -8,7 +8,8 @@ export type FieldType =
   | "boolean"
   | "select"
   | "json"
-  | "datetime";
+  | "datetime"
+  | "themeColors";
 
 export type FieldRelation = {
   resource: string;
@@ -246,9 +247,18 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         },
         {
           key: "config",
-          label: "Config",
-          type: "json",
-          defaultValue: "{}",
+          label: "Theme Settings",
+          type: "themeColors",
+          required: true,
+          defaultValue: {
+            theme: {
+              colors: {
+                primary: "#1E88E5",
+                secondary: "#E91E63",
+                main: "#212121",
+              },
+            },
+          },
         },
       ],
     },
