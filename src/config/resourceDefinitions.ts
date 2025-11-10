@@ -189,9 +189,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select: "id, name, created_at, event_id, event:events(id, name)",
+      },
       columns: [
         { key: "name", title: "Name", type: "text" },
-        { key: "event_id", title: "Event ID", type: "text" },
+        {
+          key: "event",
+          title: "Event",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.event?.name ?? data.event_id ?? "—";
+          },
+        },
         { key: "created_at", title: "Created", type: "datetime" },
       ],
       initialSorters: [
@@ -350,9 +360,27 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "organization_id, user_id, role, created_at, organization:organizations(id, name), profile:profiles(id, full_name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
-        { key: "user_id", title: "User ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
+        {
+          key: "profile",
+          title: "User",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.profile?.full_name ?? data.user_id ?? "—";
+          },
+        },
         { key: "role", title: "Role", type: "text" },
         { key: "created_at", title: "Created", type: "datetime" },
       ],
@@ -405,8 +433,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "organization_id, kind, value, is_primary, verified_at, organization:organizations(id, name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
         { key: "kind", title: "Kind", type: "text" },
         { key: "value", title: "Value", type: "text" },
         { key: "is_primary", title: "Primary", type: "boolean" },
@@ -452,8 +491,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "id, organization_id, title, created_at, organization:organizations(id, name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
         { key: "title", title: "Title", type: "text" },
         { key: "created_at", title: "Created", type: "datetime" },
       ],
@@ -494,8 +544,18 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select: "event_id, locale, name, event:events(id, name)",
+      },
       columns: [
-        { key: "event_id", title: "Event ID", type: "text" },
+        {
+          key: "event",
+          title: "Event",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.event?.name ?? data.event_id ?? "—";
+          },
+        },
         { key: "locale", title: "Locale", type: "text" },
         { key: "name", title: "Name", type: "text" },
       ],
@@ -542,8 +602,18 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select: "template_id, locale, name, template:templates(id, name)",
+      },
       columns: [
-        { key: "template_id", title: "Template ID", type: "text" },
+        {
+          key: "template",
+          title: "Template",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.template?.name ?? data.template_id ?? "—";
+          },
+        },
         { key: "locale", title: "Locale", type: "text" },
         { key: "name", title: "Name", type: "text" },
       ],
@@ -593,11 +663,18 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "event_content_id, locale, title, event_content:event_content(id, title)",
+      },
       columns: [
         {
-          key: "event_content_id",
-          title: "Content ID",
-          type: "text",
+          key: "event_content",
+          title: "Event Content",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.event_content?.title ?? data.event_content_id ?? "—";
+          },
         },
         { key: "locale", title: "Locale", type: "text" },
         { key: "title", title: "Title", type: "text" },
@@ -673,8 +750,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "organization_id, full_name, status, attending_guests, organization:organizations(id, name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
         { key: "full_name", title: "Full Name", type: "text" },
         { key: "status", title: "Status", type: "text" },
         { key: "attending_guests", title: "Guests", type: "number" },
@@ -731,8 +819,20 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "invitee_id, response, guests_count, submitted_at, invitee:invitees(id, full_name)",
+      },
       columns: [
-        { key: "invitee_id", title: "Invitee ID", type: "text" },
+        {
+          key: "invitee",
+          title: "Invitee",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const invitee = data.invitee;
+            return invitee?.full_name ?? data.invitee_id ?? "—";
+          },
+        },
         { key: "response", title: "Response", type: "text" },
         { key: "guests_count", title: "Guests", type: "number" },
         { key: "submitted_at", title: "Submitted", type: "datetime" },
@@ -818,8 +918,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "organization_id, source, total_rows, processed_rows, created_at, organization:organizations(id, name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
         { key: "source", title: "Source", type: "text" },
         { key: "total_rows", title: "Total Rows", type: "number" },
         { key: "processed_rows", title: "Processed Rows", type: "number" },
@@ -922,8 +1033,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "organization_id, question, created_at, organization:organizations(id, name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
         { key: "question", title: "Question", type: "text" },
         { key: "created_at", title: "Created", type: "datetime" },
       ],
@@ -964,8 +1086,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "question_id, option_text, is_correct, question:trivia_questions(id, question)",
+      },
       columns: [
-        { key: "question_id", title: "Question ID", type: "text" },
+        {
+          key: "question",
+          title: "Question",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.question?.question ?? data.question_id ?? "—";
+          },
+        },
         { key: "option_text", title: "Option Text", type: "text" },
         { key: "is_correct", title: "Correct", type: "boolean" },
       ],
@@ -1029,11 +1162,45 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "organization_id, respondent_name, question_id, option_id, invitee_id, created_at, organization:organizations(id, name), question:trivia_questions(id, question), option:trivia_options(id, option_text), invitee:invitees(id, full_name)",
+      },
       columns: [
-        { key: "organization_id", title: "Organization ID", type: "text" },
+        {
+          key: "organization",
+          title: "Organization",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
         { key: "respondent_name", title: "Respondent", type: "text" },
-        { key: "question_id", title: "Question ID", type: "text" },
-        { key: "option_id", title: "Option ID", type: "text" },
+        {
+          key: "question",
+          title: "Question",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.question?.question ?? data.question_id ?? "—";
+          },
+        },
+        {
+          key: "option",
+          title: "Option",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.option?.option_text ?? data.option_id ?? "—";
+          },
+        },
+        {
+          key: "invitee",
+          title: "Invitee",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const invitee = data.invitee;
+            return invitee?.full_name ?? data.invitee_id ?? "—";
+          },
+        },
         { key: "created_at", title: "Created", type: "datetime" },
       ],
     },
@@ -1073,8 +1240,23 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "question_id, locale, question, questionRelation:trivia_questions(id, question)",
+      },
       columns: [
-        { key: "question_id", title: "Question ID", type: "text" },
+        {
+          key: "original_question",
+          title: "Original Question",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return (
+              (data.questionRelation?.question as string | undefined) ??
+              data.question_id ??
+              "—"
+            );
+          },
+        },
         { key: "locale", title: "Locale", type: "text" },
         { key: "question", title: "Question", type: "text" },
       ],
@@ -1115,8 +1297,23 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select:
+          "option_id, locale, option_text, optionRelation:trivia_options(id, option_text)",
+      },
       columns: [
-        { key: "option_id", title: "Option ID", type: "text" },
+        {
+          key: "original_option",
+          title: "Original Option",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return (
+              (data.optionRelation?.option_text as string | undefined) ??
+              data.option_id ??
+              "—"
+            );
+          },
+        },
         { key: "locale", title: "Locale", type: "text" },
         { key: "option_text", title: "Option Text", type: "text" },
       ],
@@ -1201,8 +1398,18 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       ],
     },
     list: {
+      meta: {
+        select: "faq_id, locale, question, faq:faq(id, question)",
+      },
       columns: [
-        { key: "faq_id", title: "FAQ ID", type: "text" },
+        {
+          key: "faq",
+          title: "FAQ",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.faq?.question ?? data.faq_id ?? "—";
+          },
+        },
         { key: "locale", title: "Locale", type: "text" },
         { key: "question", title: "Question", type: "text" },
       ],
@@ -1215,5 +1422,3 @@ export const RESOURCE_DEFINITION_MAP: Record<string, ResourceDefinition> =
     acc[definition.name] = definition;
     return acc;
   }, {} as Record<string, ResourceDefinition>);
-
-

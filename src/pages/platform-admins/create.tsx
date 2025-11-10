@@ -11,7 +11,7 @@ export const PlatformAdminsCreate = () => {
   });
 
   const { selectProps: userSelectProps } = useSelect({
-    resource: "user_emails",
+    resource: "user_email",
     optionLabel: "email",
     optionValue: "user_id",
     debounce: 300,

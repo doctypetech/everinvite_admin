@@ -20,6 +20,7 @@ import {
   Fragment,
   useMemo,
   type ReactNode,
+  type FC,
 } from "react";
 import {
   AppstoreOutlined,
@@ -53,6 +54,7 @@ import {
   type ResourceGroupDefinition,
 } from "./config/resourceGroups";
 import { ResourceGroupPage } from "./pages/groups";
+import { ProfilesList } from "./pages/profiles";
 
 const dataProvider = createDataProvider();
 const realtimeProvider = liveProvider(supabaseClient);
@@ -131,6 +133,10 @@ const mapGroupToRefine = (definition: ResourceGroupDefinition) => {
 
 const stripAdminPrefix = (path?: string) =>
   path?.replace(/^\/?admin\/?/, "") ?? undefined;
+
+const LIST_COMPONENT_OVERRIDES: Record<string, FC> = {
+  profiles: ProfilesList,
+};
 
 function App() {
   const refineResources = useMemo(
@@ -227,12 +233,15 @@ function App() {
                         definition.routes.edit
                       );
 
+                      const ListComponent =
+                        LIST_COMPONENT_OVERRIDES[definition.name] ?? GenericList;
+
                       return (
                         <Fragment key={definition.name}>
                           {listPath && !groupRouteNames.has(listPath) && (
                             <Route
                               path={listPath}
-                              element={<GenericList />}
+                              element={<ListComponent />}
                             />
                           )}
                           {createPath && (

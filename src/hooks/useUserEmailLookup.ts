@@ -19,7 +19,7 @@ export const useUserEmailLookup = (userIds: MaybeString[] | undefined) => {
   }, [userIds]);
 
   const usersQuery = useMany<{ user_id: string; email: string }>({
-    resource: "user_emails",
+    resource: "user_email",
     ids,
     queryOptions: {
       enabled: ids.length > 0,
