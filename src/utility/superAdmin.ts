@@ -20,12 +20,12 @@ const isMissingFunctionError = (error: unknown): boolean =>
 const isNoRowError = (error: unknown): boolean =>
   isPostgrestError(error) && error.code === "PGRST116";
 
-export const clearPlatformAdminCache = () => {
+export const clearSuperAdminCache = () => {
   adminCache.clear();
   rpcSupportState = "unknown";
 };
 
-export const fetchIsPlatformAdmin = async (
+export const fetchIsSuperAdmin = async (
   userId?: string | null
 ): Promise<boolean> => {
   if (!userId) {
@@ -39,7 +39,7 @@ export const fetchIsPlatformAdmin = async (
 
   if (rpcSupportState !== "unsupported") {
     try {
-      const { data } = await supabaseClient.rpc("is_platform_admin");
+      const { data } = await supabaseClient.rpc("is_super_admin");
 
       if (typeof data === "boolean") {
         adminCache.set(userId, data);
@@ -50,10 +50,10 @@ export const fetchIsPlatformAdmin = async (
       if (isMissingFunctionError(error)) {
         rpcSupportState = "unsupported";
       } else if (isPostgrestError(error)) {
-        console.warn("is_platform_admin RPC failed", error);
+        console.warn("is_super_admin RPC failed", error);
         rpcSupportState = "supported";
       } else {
-        console.warn("Unexpected error from is_platform_admin RPC", error);
+        console.warn("Unexpected error from is_super_admin RPC", error);
         rpcSupportState = "supported";
       }
     }
@@ -61,9 +61,10 @@ export const fetchIsPlatformAdmin = async (
 
   try {
     const { data, error } = await supabaseClient
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", userId)
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .eq("role", "super_admin")
       .maybeSingle();
 
     if (error) {
@@ -72,7 +73,7 @@ export const fetchIsPlatformAdmin = async (
         return false;
       }
 
-      console.warn("Failed to resolve platform admin via table lookup", error);
+      console.warn("Failed to resolve super admin via table lookup", error);
       return false;
     }
 
@@ -80,7 +81,10 @@ export const fetchIsPlatformAdmin = async (
     adminCache.set(userId, result);
     return result;
   } catch (error) {
-    console.error("Unexpected error while resolving platform admin flag", error);
+    console.error(
+      "Unexpected error while resolving super admin flag from profiles",
+      error
+    );
     return false;
   }
 };

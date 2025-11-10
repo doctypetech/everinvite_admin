@@ -1,6 +1,6 @@
-import { List, useTable, EditButton } from "@refinedev/antd";
+import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { IResourceComponentsProps } from "@refinedev/core";
-import { Alert, Table } from "antd";
+import { Alert, Space, Table } from "antd";
 import { useMemo } from "react";
 import { useOrg } from "../../contexts/org";
 
@@ -10,12 +10,13 @@ const EVENT_TEXTS_META = {
 } as const;
 
 export const EventTextsList: React.FC<IResourceComponentsProps> = () => {
-  const { activeMembership, loading } = useOrg();
+  const { activeMembership, loading, isPlatformAdmin } = useOrg();
   const orgId = activeMembership?.orgId;
   const canManage = useMemo(
     () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
     [activeMembership?.role]
   );
+  const canDelete = isPlatformAdmin || canManage;
 
   const tableConfig = useMemo(
     () => ({
@@ -70,16 +71,28 @@ export const EventTextsList: React.FC<IResourceComponentsProps> = () => {
         <Table.Column
           title="Actions"
           render={(_, record: any) => (
-            <EditButton
-              size="small"
-              disabled={!canManage}
-              hideText
-              recordItemId={`${record.event_id}-${record.locale}`}
-              meta={{
-                event_id: record.event_id,
-                locale: record.locale,
-              }}
-            />
+            <Space>
+              <EditButton
+                size="small"
+                disabled={!canManage}
+                hideText
+                recordItemId={`${record.event_id}-${record.locale}`}
+                meta={{
+                  event_id: record.event_id,
+                  locale: record.locale,
+                }}
+              />
+              <DeleteButton
+                size="small"
+                hideText
+                recordItemId={`${record.event_id}-${record.locale}`}
+                meta={{
+                  event_id: record.event_id,
+                  locale: record.locale,
+                }}
+                disabled={!canDelete}
+              />
+            </Space>
           )}
         />
       </Table>

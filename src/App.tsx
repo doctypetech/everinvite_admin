@@ -2,7 +2,6 @@ import { Authenticated, Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
 import {
-  AuthPage,
   ErrorComponent,
   ThemedLayout,
   ThemedSider,
@@ -17,6 +16,23 @@ import routerProvider, {
 } from "@refinedev/react-router";
 import { App as AntdApp } from "antd";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
+import {
+  Fragment,
+  useMemo,
+  type ReactNode,
+} from "react";
+import {
+  AppstoreOutlined,
+  CalendarOutlined,
+  CloudUploadOutlined,
+  FileTextOutlined,
+  IdcardOutlined,
+  LayoutOutlined,
+  QuestionCircleOutlined,
+  TeamOutlined,
+  UsergroupAddOutlined,
+  BulbOutlined,
+} from "@ant-design/icons";
 import authProvider from "./authProvider";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
@@ -24,49 +40,118 @@ import { OrgProvider } from "./contexts/org";
 import { accessControlProvider } from "./accessControlProvider";
 import { createDataProvider } from "./providers/dataProvider";
 import { liveProvider } from "@refinedev/supabase";
-import { EventsCreate, EventsEdit, EventsList } from "./pages/events";
-import {
-  EventTextsCreate,
-  EventTextsEdit,
-  EventTextsList,
-} from "./pages/event-texts";
-import {
-  EventDomainsCreate,
-  EventDomainsEdit,
-  EventDomainsList,
-} from "./pages/event-domains";
-import { PhotosCreate, PhotosEdit, PhotosList } from "./pages/photos";
-import {
-  UploadTokensCreate,
-  UploadTokensEdit,
-  UploadTokensList,
-} from "./pages/upload-tokens";
-import {
-  EventTypesCreate,
-  EventTypesEdit,
-  EventTypesList,
-} from "./pages/event-types";
-import {
-  TemplatesCreate,
-  TemplatesEdit,
-  TemplatesList,
-} from "./pages/templates";
-import { ThemesCreate, ThemesEdit, ThemesList } from "./pages/themes";
-import {
-  OrgMembersCreate,
-  OrgMembersEdit,
-  OrgMembersList,
-} from "./pages/org-members";
-import {
-  PlatformAdminsCreate,
-  PlatformAdminsList,
-} from "./pages/platform-admins";
+import { LoginPage } from "./pages/auth/Login";
+import { GenericCreate, GenericEdit, GenericList } from "./pages/resources";
 import { supabaseClient } from "./utility";
+import "./styles/menu.css";
+import {
+  RESOURCE_DEFINITIONS,
+  type ResourceDefinition,
+} from "./config/resourceDefinitions";
+import {
+  RESOURCE_GROUP_DEFINITIONS,
+  type ResourceGroupDefinition,
+} from "./config/resourceGroups";
+import { ResourceGroupPage } from "./pages/groups";
 
 const dataProvider = createDataProvider();
 const realtimeProvider = liveProvider(supabaseClient);
 
+const GROUP_ICON_MAP: Record<string, ReactNode> = {
+  event: <CalendarOutlined />,
+  template: <LayoutOutlined />,
+  organization: <TeamOutlined />,
+  profile: <IdcardOutlined />,
+  "event-content": <FileTextOutlined />,
+  invitees: <UsergroupAddOutlined />,
+  imports: <CloudUploadOutlined />,
+  trivia: <BulbOutlined />,
+  faq: <QuestionCircleOutlined />,
+};
+
+const RESOURCE_ICON_MAP: Record<string, ReactNode> = {
+  events: <CalendarOutlined />,
+  event_translations: <CalendarOutlined />,
+  templates: <LayoutOutlined />,
+  template_translations: <LayoutOutlined />,
+  organizations: <TeamOutlined />,
+  organization_members: <TeamOutlined />,
+  org_aliases: <TeamOutlined />,
+  profiles: <IdcardOutlined />,
+  event_content: <FileTextOutlined />,
+  event_content_translations: <FileTextOutlined />,
+  invitees: <UsergroupAddOutlined />,
+  invitee_rsvps: <UsergroupAddOutlined />,
+  import_batches: <CloudUploadOutlined />,
+  import_invitee_rows: <CloudUploadOutlined />,
+  trivia_questions: <BulbOutlined />,
+  trivia_options: <BulbOutlined />,
+  trivia_answers: <BulbOutlined />,
+  trivia_question_translations: <BulbOutlined />,
+  trivia_option_translations: <BulbOutlined />,
+  faq: <QuestionCircleOutlined />,
+  faq_translations: <QuestionCircleOutlined />,
+};
+
+const defaultIcon = <AppstoreOutlined />;
+
+const mapResourceToRefine = (definition: ResourceDefinition) => ({
+  name: definition.name,
+  list: definition.routes.list,
+  create: definition.routes.create,
+  edit: definition.routes.edit,
+  meta: {
+    label: definition.label,
+    hide: true,
+    icon: RESOURCE_ICON_MAP[definition.name] ?? defaultIcon,
+  },
+  options: {
+    label: definition.label,
+    icon: RESOURCE_ICON_MAP[definition.name] ?? defaultIcon,
+  },
+  canDelete: definition.canDelete !== false,
+});
+
+const mapGroupToRefine = (definition: ResourceGroupDefinition) => {
+  const resourceName = `group:${definition.name}`;
+  return {
+    name: resourceName,
+    list: definition.route,
+    meta: {
+      label: definition.label,
+      icon: GROUP_ICON_MAP[definition.name] ?? defaultIcon,
+    },
+    options: {
+      label: definition.label,
+      icon: GROUP_ICON_MAP[definition.name] ?? defaultIcon,
+    },
+    canDelete: false,
+  };
+};
+
+const stripAdminPrefix = (path?: string) =>
+  path?.replace(/^\/?admin\/?/, "") ?? undefined;
+
 function App() {
+  const refineResources = useMemo(
+    () => [
+      ...RESOURCE_GROUP_DEFINITIONS.map(mapGroupToRefine),
+      ...RESOURCE_DEFINITIONS.map(mapResourceToRefine),
+    ],
+    []
+  );
+
+  const defaultGroup = RESOURCE_GROUP_DEFINITIONS[0];
+  const groupRouteNames = useMemo(
+    () =>
+      new Set(
+        RESOURCE_GROUP_DEFINITIONS.map((definition) =>
+          stripAdminPrefix(definition.route)
+        ).filter((route): route is string => Boolean(route))
+      ),
+    []
+  );
+
   return (
     <BrowserRouter>
       <RefineKbarProvider>
@@ -79,70 +164,7 @@ function App() {
               accessControlProvider={accessControlProvider}
               routerProvider={routerProvider}
               notificationProvider={useNotificationProvider}
-              resources={[
-                {
-                  name: "events",
-                  list: "/admin/events",
-                  create: "/admin/events/create",
-                  edit: "/admin/events/edit/:id",
-                },
-                {
-                  name: "event_texts",
-                  list: "/admin/event-texts",
-                  create: "/admin/event-texts/create",
-                  edit: "/admin/event-texts/edit/:id",
-                },
-                {
-                  name: "event_domains",
-                  list: "/admin/event-domains",
-                  create: "/admin/event-domains/create",
-                  edit: "/admin/event-domains/edit/:id",
-                },
-                {
-                  name: "photos",
-                  list: "/admin/photos",
-                  create: "/admin/photos/create",
-                  edit: "/admin/photos/edit/:id",
-                },
-                {
-                  name: "upload_tokens",
-                  list: "/admin/upload-tokens",
-                  create: "/admin/upload-tokens/create",
-                  edit: "/admin/upload-tokens/edit/:id",
-                },
-                {
-                  name: "event_types",
-                  list: "/admin/catalog/event-types",
-                  create: "/admin/catalog/event-types/create",
-                  edit: "/admin/catalog/event-types/edit/:id",
-                },
-                {
-                  name: "templates",
-                  list: "/admin/catalog/templates",
-                  create: "/admin/catalog/templates/create",
-                  edit: "/admin/catalog/templates/edit/:id",
-                },
-                {
-                  name: "themes",
-                  list: "/admin/catalog/themes",
-                  create: "/admin/catalog/themes/create",
-                  edit: "/admin/catalog/themes/edit/:id",
-                },
-                {
-                  name: "org_members",
-                  list: "/admin/org-members",
-                  create: "/admin/org-members/create",
-                  edit: "/admin/org-members/edit/:id",
-                },
-                {
-                  name: "platform_admins",
-                  list: "/admin/platform-admins",
-                  create: "/admin/platform-admins/create",
-                  meta: {
-                    canDelete: true,
-                  },
-                },
-              ]}
+              resources={refineResources}
               options={{
                 syncWithLocation: true,
                 warnWhenUnsavedChanges: true,
@@ -170,59 +192,61 @@ function App() {
                   <Route path="/admin">
                     <Route
                       index
-                      element={<Navigate to="/admin/events" replace />}
+                      element={
+                        <Navigate
+                          to={defaultGroup?.route ?? "/admin/event"}
+                          replace
+                        />
+                      }
                     />
-                    <Route path="events">
-                      <Route index element={<EventsList />} />
-                      <Route path="create" element={<EventsCreate />} />
-                      <Route path="edit/:id" element={<EventsEdit />} />
-                    </Route>
-                    <Route path="event-texts">
-                      <Route index element={<EventTextsList />} />
-                      <Route path="create" element={<EventTextsCreate />} />
-                      <Route path="edit/:id" element={<EventTextsEdit />} />
-                    </Route>
-                    <Route path="event-domains">
-                      <Route index element={<EventDomainsList />} />
-                      <Route path="create" element={<EventDomainsCreate />} />
-                      <Route path="edit/:id" element={<EventDomainsEdit />} />
-                    </Route>
-                    <Route path="photos">
-                      <Route index element={<PhotosList />} />
-                      <Route path="create" element={<PhotosCreate />} />
-                      <Route path="edit/:id" element={<PhotosEdit />} />
-                    </Route>
-                    <Route path="upload-tokens">
-                      <Route index element={<UploadTokensList />} />
-                      <Route path="create" element={<UploadTokensCreate />} />
-                      <Route path="edit/:id" element={<UploadTokensEdit />} />
-                    </Route>
-                    <Route path="catalog">
-                      <Route path="event-types">
-                        <Route index element={<EventTypesList />} />
-                        <Route path="create" element={<EventTypesCreate />} />
-                        <Route path="edit/:id" element={<EventTypesEdit />} />
-                      </Route>
-                      <Route path="templates">
-                        <Route index element={<TemplatesList />} />
-                        <Route path="create" element={<TemplatesCreate />} />
-                        <Route path="edit/:id" element={<TemplatesEdit />} />
-                      </Route>
-                      <Route path="themes">
-                        <Route index element={<ThemesList />} />
-                        <Route path="create" element={<ThemesCreate />} />
-                        <Route path="edit/:id" element={<ThemesEdit />} />
-                      </Route>
-                    </Route>
-                    <Route path="org-members">
-                      <Route index element={<OrgMembersList />} />
-                      <Route path="create" element={<OrgMembersCreate />} />
-                      <Route path="edit/:id" element={<OrgMembersEdit />} />
-                    </Route>
-                    <Route path="platform-admins">
-                      <Route index element={<PlatformAdminsList />} />
-                      <Route path="create" element={<PlatformAdminsCreate />} />
-                    </Route>
+                    {RESOURCE_GROUP_DEFINITIONS.map((definition) => {
+                      const groupPath = stripAdminPrefix(definition.route);
+
+                      if (!groupPath) {
+                        return null;
+                      }
+
+                      return (
+                        <Route
+                          key={`group-${definition.name}`}
+                          path={groupPath}
+                          element={
+                            <ResourceGroupPage groupName={definition.name} />
+                          }
+                        />
+                      );
+                    })}
+                    {RESOURCE_DEFINITIONS.map((definition) => {
+                      const listPath = stripAdminPrefix(
+                        definition.routes.list
+                      );
+                      const createPath = stripAdminPrefix(
+                        definition.routes.create
+                      );
+                      const editPath = stripAdminPrefix(
+                        definition.routes.edit
+                      );
+
+                      return (
+                        <Fragment key={definition.name}>
+                          {listPath && !groupRouteNames.has(listPath) && (
+                            <Route
+                              path={listPath}
+                              element={<GenericList />}
+                            />
+                          )}
+                          {createPath && (
+                            <Route
+                              path={createPath}
+                              element={<GenericCreate />}
+                            />
+                          )}
+                          {editPath && (
+                            <Route path={editPath} element={<GenericEdit />} />
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </Route>
                   <Route path="*" element={<ErrorComponent />} />
                 </Route>
@@ -236,10 +260,7 @@ function App() {
                     </Authenticated>
                   }
                 >
-                  <Route
-                    path="/admin/login"
-                    element={<AuthPage type="login" />}
-                  />
+                    <Route path="/admin/login" element={<LoginPage />} />
                 </Route>
               </Routes>
 

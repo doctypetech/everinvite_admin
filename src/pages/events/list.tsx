@@ -1,4 +1,4 @@
-import { List, useTable, EditButton } from "@refinedev/antd";
+import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { CrudFilters, CrudSort, IResourceComponentsProps } from "@refinedev/core";
 import { Alert, Space, Table, Tag, Typography } from "antd";
 import { useMemo } from "react";
@@ -23,12 +23,13 @@ const EVENTS_SORTERS: CrudSort[] = [
 ];
 
 export const EventsList: React.FC<IResourceComponentsProps> = () => {
-  const { activeMembership, loading } = useOrg();
+  const { activeMembership, loading, isPlatformAdmin } = useOrg();
   const orgId = activeMembership?.orgId;
   const canManage = useMemo(
     () => ["owner", "admin", "editor"].includes(activeMembership?.role ?? ""),
     [activeMembership?.role]
   );
+  const canDelete = isPlatformAdmin || canManage;
 
   const tableConfig = useMemo(() => {
     const initialFilters: CrudFilters = orgId
@@ -116,6 +117,12 @@ export const EventsList: React.FC<IResourceComponentsProps> = () => {
                 hideText
                 recordItemId={record.id}
                 disabled={!canManage}
+              />
+              <DeleteButton
+                size="small"
+                hideText
+                recordItemId={record.id}
+                disabled={!canDelete}
               />
             </Space>
           )}

@@ -29,7 +29,7 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
   const { token } = useToken();
   const { data: user } = useGetIdentity<IUser>();
   const { mode, setMode } = useContext(ColorModeContext);
-  const { isPlatformAdmin, activeMembership } = useOrg();
+  const { isSuperAdmin, activeMembership, memberships, loading } = useOrg();
 
   const headerStyles: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
@@ -50,10 +50,14 @@ export const Header: React.FC<RefineThemedLayoutHeaderProps> = ({
     <AntdLayout.Header style={headerStyles}>
       <Space size="middle">
         <OrgSwitcher />
-        {activeMembership?.org && (
-          <Tag color="blue">{activeMembership.org.slug}</Tag>
+        {!loading && memberships.length > 0 && (
+          <Tag color="blue">
+            {activeMembership?.org
+              ? activeMembership.org.slug || activeMembership.org.name
+              : "All organizations"}
+          </Tag>
         )}
-        {isPlatformAdmin && <Tag color="geekblue">Platform Admin</Tag>}
+        {isSuperAdmin && <Tag color="geekblue">Super Admin</Tag>}
       </Space>
       <Space>
         <Switch

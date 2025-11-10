@@ -1,5 +1,5 @@
 import { Create, useForm, useSelect } from "@refinedev/antd";
-import { Alert, Form, Input, Select } from "antd";
+import { Alert, Form, Select } from "antd";
 import { useOrg } from "../../contexts/org";
 
 const ROLE_OPTIONS = [
@@ -21,6 +21,16 @@ export const OrgMembersCreate = () => {
     resource: "orgs",
     optionLabel: "name",
     optionValue: "id",
+  });
+
+  const { selectProps: userSelectProps } = useSelect({
+    resource: "user_emails",
+    optionLabel: "email",
+    optionValue: "user_id",
+    debounce: 300,
+    pagination: {
+      pageSize: 50,
+    },
   });
 
   const handleFinish = async (values: any) => {
@@ -68,11 +78,16 @@ export const OrgMembersCreate = () => {
         </Form.Item>
 
         <Form.Item
-          label="User ID"
+          label="Email"
           name="user_id"
-          rules={[{ required: true, message: "User ID is required" }]}
+          rules={[{ required: true, message: "Email is required" }]}
         >
-          <Input placeholder="Supabase auth.users UUID" />
+          <Select
+            placeholder="Select user email"
+            showSearch
+            optionFilterProp="label"
+            {...userSelectProps}
+          />
         </Form.Item>
 
         <Form.Item

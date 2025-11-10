@@ -1,2 +1,2 @@
 export * from "./supabaseClient";
-export * from "./platformAdmin";
+export * from "./superAdmin";

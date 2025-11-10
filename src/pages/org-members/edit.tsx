@@ -1,5 +1,5 @@
 import { Edit, useForm, useSelect } from "@refinedev/antd";
-import { Alert, Form, Input, Select } from "antd";
+import { Alert, Form, Select } from "antd";
 import { useParams } from "react-router";
 import { useOrg } from "../../contexts/org";
 
@@ -27,6 +27,16 @@ export const OrgMembersEdit = () => {
     resource: "orgs",
     optionLabel: "name",
     optionValue: "id",
+  });
+
+  const { selectProps: userSelectProps } = useSelect({
+    resource: "user_emails",
+    optionLabel: "email",
+    optionValue: "user_id",
+    debounce: 300,
+    pagination: {
+      pageSize: 50,
+    },
   });
 
   const handleFinish = async (values: any) => {
@@ -73,8 +83,8 @@ export const OrgMembersEdit = () => {
         <Form.Item label="Organization" name="org_id">
           <Select {...orgSelectProps} disabled />
         </Form.Item>
-        <Form.Item label="User ID" name="user_id">
-          <Input disabled />
+        <Form.Item label="Email" name="user_id">
+          <Select {...userSelectProps} disabled showSearch optionFilterProp="label" />
         </Form.Item>
         <Form.Item
           label="Role"

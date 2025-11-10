@@ -1,18 +1,10 @@
 import type { AccessControlProvider } from "@refinedev/core";
-import { supabaseClient, fetchIsPlatformAdmin } from "./utility";
+import { supabaseClient, fetchIsSuperAdmin } from "./utility";
 
 const PLATFORM_ADMIN_RESOURCES = new Set([
-  "org_members",
-  "platform_admins",
+  "organization_members",
+  "profiles",
 ]);
-
-const PLATFORM_ADMIN_WRITE_RESOURCES = new Set([
-  "event_types",
-  "templates",
-  "themes",
-]);
-
-const WRITE_ACTIONS = new Set(["create", "edit", "delete"]);
 
 export const accessControlProvider: AccessControlProvider = {
   can: async ({ resource, action }) => {
@@ -30,24 +22,12 @@ export const accessControlProvider: AccessControlProvider = {
       };
     }
 
-    const isPlatformAdmin = await fetchIsPlatformAdmin(session.user.id);
+    const isSuperAdmin = await fetchIsSuperAdmin(session.user.id);
 
     if (PLATFORM_ADMIN_RESOURCES.has(resourceName)) {
       return {
-        can: isPlatformAdmin,
-        reason: isPlatformAdmin ? undefined : "Requires platform admin access",
-      };
-    }
-
-    if (
-      PLATFORM_ADMIN_WRITE_RESOURCES.has(resourceName) &&
-      WRITE_ACTIONS.has(actionName)
-    ) {
-      return {
-        can: isPlatformAdmin,
-        reason: isPlatformAdmin
-          ? undefined
-          : "Requires platform admin access to modify catalog resources",
+        can: isSuperAdmin,
+        reason: isSuperAdmin ? undefined : "Requires super admin access",
       };
     }
 

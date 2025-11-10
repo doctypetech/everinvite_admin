@@ -11,23 +11,11 @@ import type {
 import { dataProvider as supabaseDataProvider } from "@refinedev/supabase";
 import { supabaseClient } from "../utility";
 
-const parseEventTextCompositeId = (id: string | number) => {
-  const [eventPart, locale] = String(id).split(":");
-  const eventId = Number(eventPart);
-
-  if (!eventId || !locale) {
-    throw new Error("Invalid event_texts identifier");
-  }
-
-  return { eventId, locale };
-};
-
-const parseOrgMemberCompositeId = (id: string | number) => {
-  const [orgPart, userId] = String(id).split(":");
-  const orgId = Number(orgPart);
+const parseOrganizationMemberCompositeId = (id: string | number) => {
+  const [orgId, userId] = String(id).split(":");
 
   if (!orgId || !userId) {
-    throw new Error("Invalid org_members identifier");
+    throw new Error("Invalid organization_members identifier");
   }
 
   return { orgId, userId };
@@ -43,34 +31,13 @@ export const createDataProvider = (): DataProvider => {
     ): Promise<GetOneResponse<TData>> => {
       const { resource, id, meta } = params;
 
-      if (resource === "event_texts") {
-        const { eventId, locale } = parseEventTextCompositeId(id);
+      if (resource === "organization_members") {
+        const { orgId, userId } = parseOrganizationMemberCompositeId(id);
 
         const { data, error } = await supabaseClient
-          .from("event_texts")
+          .from("organization_members")
           .select((meta as any)?.select ?? "*")
-          .eq("event_id", eventId)
-          .eq("locale", locale)
-          .maybeSingle();
-
-        if (error) {
-          throw error;
-        }
-
-        if (!data) {
-          throw new Error("Event copy not found");
-        }
-
-        return { data: data as unknown as TData };
-      }
-
-      if (resource === "org_members") {
-        const { orgId, userId } = parseOrgMemberCompositeId(id);
-
-        const { data, error } = await supabaseClient
-          .from("org_members")
-          .select((meta as any)?.select ?? "*")
-          .eq("org_id", orgId)
+          .eq("organization_id", orgId)
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -79,7 +46,7 @@ export const createDataProvider = (): DataProvider => {
         }
 
         if (!data) {
-          throw new Error("Org membership not found");
+          throw new Error("Organization membership not found");
         }
 
         return { data: data as unknown as TData };
@@ -92,31 +59,13 @@ export const createDataProvider = (): DataProvider => {
     ): Promise<UpdateResponse<TData>> => {
       const { resource, id, variables, meta } = params;
 
-      if (resource === "event_texts") {
-        const { eventId, locale } = parseEventTextCompositeId(id);
+      if (resource === "organization_members") {
+        const { orgId, userId } = parseOrganizationMemberCompositeId(id);
 
         const { data, error } = await supabaseClient
-          .from("event_texts")
+          .from("organization_members")
           .update((variables as Record<string, unknown>) ?? {})
-          .eq("event_id", eventId)
-          .eq("locale", locale)
-          .select((meta as any)?.select ?? "*")
-          .maybeSingle();
-
-        if (error) {
-          throw error;
-        }
-
-        return { data: data as unknown as TData };
-      }
-
-      if (resource === "org_members") {
-        const { orgId, userId } = parseOrgMemberCompositeId(id);
-
-        const { data, error } = await supabaseClient
-          .from("org_members")
-          .update((variables as Record<string, unknown>) ?? {})
-          .eq("org_id", orgId)
+          .eq("organization_id", orgId)
           .eq("user_id", userId)
           .select((meta as any)?.select ?? "*")
           .maybeSingle();
@@ -135,31 +84,13 @@ export const createDataProvider = (): DataProvider => {
     ): Promise<DeleteOneResponse<TData>> => {
       const { resource, id, meta } = params;
 
-      if (resource === "event_texts") {
-        const { eventId, locale } = parseEventTextCompositeId(id);
+      if (resource === "organization_members") {
+        const { orgId, userId } = parseOrganizationMemberCompositeId(id);
 
         const { data, error } = await supabaseClient
-          .from("event_texts")
+          .from("organization_members")
           .delete()
-          .eq("event_id", eventId)
-          .eq("locale", locale)
-          .select((meta as any)?.select ?? "*")
-          .maybeSingle();
-
-        if (error) {
-          throw error;
-        }
-
-        return { data: data as unknown as TData };
-      }
-
-      if (resource === "org_members") {
-        const { orgId, userId } = parseOrgMemberCompositeId(id);
-
-        const { data, error } = await supabaseClient
-          .from("org_members")
-          .delete()
-          .eq("org_id", orgId)
+          .eq("organization_id", orgId)
           .eq("user_id", userId)
           .select((meta as any)?.select ?? "*")
           .maybeSingle();
@@ -175,4 +106,3 @@ export const createDataProvider = (): DataProvider => {
     },
   };
 };
-

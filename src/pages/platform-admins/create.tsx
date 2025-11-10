@@ -1,5 +1,5 @@
-import { Create, useForm } from "@refinedev/antd";
-import { Alert, Form, Input } from "antd";
+import { Create, useForm, useSelect } from "@refinedev/antd";
+import { Alert, Form, Select } from "antd";
 import { useOrg } from "../../contexts/org";
 
 export const PlatformAdminsCreate = () => {
@@ -8,6 +8,16 @@ export const PlatformAdminsCreate = () => {
   const { formProps, saveButtonProps, onFinish } = useForm({
     resource: "platform_admins",
     redirect: "list",
+  });
+
+  const { selectProps: userSelectProps } = useSelect({
+    resource: "user_emails",
+    optionLabel: "email",
+    optionValue: "user_id",
+    debounce: 300,
+    pagination: {
+      pageSize: 50,
+    },
   });
 
   const handleFinish = async (values: any) => {
@@ -41,11 +51,16 @@ export const PlatformAdminsCreate = () => {
         onFinish={handleFinish}
       >
         <Form.Item
-          label="User ID"
+          label="Email"
           name="user_id"
-          rules={[{ required: true, message: "User ID is required" }]}
+          rules={[{ required: true, message: "Email is required" }]}
         >
-          <Input placeholder="Supabase auth.users UUID" />
+          <Select
+            placeholder="Select user email"
+            showSearch
+            optionFilterProp="label"
+            {...userSelectProps}
+          />
         </Form.Item>
       </Form>
     </Create>
