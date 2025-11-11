@@ -17,13 +17,16 @@ type ResourceGroupPageProps = {
   groupName: string;
 };
 
-const renderHeader = (definition: ResourceGroupDefinition) => {
+const renderHeader = (
+  title: string,
+  hasMultipleSections: boolean
+) => {
   return (
     <div>
       <Typography.Title level={2} style={{ marginBottom: 0 }}>
-        {definition.label}
+        {title}
       </Typography.Title>
-      {definition.sections.length > 1 && (
+      {hasMultipleSections && (
         <Typography.Text type="secondary">
           Manage all related resources from a single place.
         </Typography.Text>
@@ -46,7 +49,7 @@ export const ResourceGroupPage: React.FC<ResourceGroupPageProps> = ({
   const organizationId =
     searchParams.get("organizationId") ?? searchParams.get("filters[0][value]");
   const showBackToOrganizations =
-    ORGANIZATION_RELATED_GROUP_NAMES.has(groupName);
+    ORGANIZATION_RELATED_GROUP_NAMES.has(groupName) || viewMode === "trivia";
 
   if (!definition) {
     return (
@@ -104,14 +107,31 @@ export const ResourceGroupPage: React.FC<ResourceGroupPageProps> = ({
     [effectiveSections, organizationId]
   );
 
+  const displayLabel =
+    viewMode === "trivia" ? "Trivia" : definition.label;
+
   return (
     <div style={{ width: "100%", marginTop: 16 }}>
-      {renderHeader(definition)}
+      {renderHeader(displayLabel, effectiveSections.length > 1)}
       <Space style={{ marginTop: 16, marginBottom: 16 }} wrap>
         {showBackToOrganizations && (
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/admin/organization")}
+            onClick={() => {
+              const params = new URLSearchParams(location.search);
+              params.delete("view");
+              params.delete("tab");
+              const organizationId =
+                searchParams.get("organizationId") ??
+                searchParams.get("filters[0][value]");
+              if (organizationId) {
+                params.set("organizationId", organizationId);
+              }
+              navigate({
+                pathname: "/admin/organization",
+                search: params.toString(),
+              });
+            }}
           >
             Back to Organizations
           </Button>

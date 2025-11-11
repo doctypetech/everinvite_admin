@@ -385,17 +385,14 @@ export const buildOrganizationGroupUrl = (
   params.set("filters[0][operator]", "eq");
   params.set("filters[0][value]", String(organizationId));
   params.set("organizationId", String(organizationId));
+
   if (targetResource && targetResource !== fallbackResource) {
     params.set("tab", targetResource);
   } else if (!targetResource && fallbackResource) {
     params.delete("tab");
   }
 
-  if (
-    targetResource &&
-    TRIVIA_RESOURCE_NAMES.has(targetResource) &&
-    groupName === "organization"
-  ) {
+  if (targetResource && TRIVIA_RESOURCE_NAMES.has(targetResource)) {
     params.set("view", "trivia");
   } else {
     params.delete("view");
