@@ -481,12 +481,12 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     },
   },
   {
-    name: "event_content",
+    name: "organization_content",
     label: "Content",
     routes: {
-      list: "/admin/event-content",
-      create: "/admin/event-content/create",
-      edit: "/admin/event-content/edit/:id",
+      list: "/admin/organization-content",
+      create: "/admin/organization-content/create",
+      edit: "/admin/organization-content/edit/:id",
     },
     form: {
       meta: {
@@ -521,24 +521,14 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           type: "json",
         },
         {
-          key: "image_bucket",
-          label: "Image Bucket",
-          type: "text",
-          defaultValue: "event-assets",
-          helperText: "Supabase storage bucket (read-only).",
-          disabledOnCreate: true,
-          disabledOnEdit: true,
-        },
-        {
           key: "image_path",
-          label: "Hero Image",
+          label: "Background Image",
           type: "image",
           helperText:
             "Upload an image to associate with this piece of content. We store the Supabase storage path.",
           storage: {
-            bucket: "event-assets",
+            bucket: "organization_assets",
             bucketField: "image_bucket",
-            folder: "event-content",
             organizationField: "organization_id",
             recordIdField: "id",
             includeOrganizationIdInPath: true,
@@ -681,22 +671,22 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     },
   },
   {
-    name: "event_content_translations",
+    name: "organization_content_translations",
     label: "Content Translations",
-    orgFilterField: "event_content.organization_id",
+    orgFilterField: "organization_content.organization_id",
     routes: {
-      list: "/admin/event-content-translations",
-      create: "/admin/event-content-translations/create",
-      edit: "/admin/event-content-translations/edit/:id",
+      list: "/admin/organization-content-translations",
+      create: "/admin/organization-content-translations/create",
+      edit: "/admin/organization-content-translations/edit/:id",
     },
     form: {
       fields: [
         {
-          key: "event_content_id",
+          key: "organization_content_id",
           label: "Content",
           type: "select",
           relation: {
-            resource: "event_content",
+            resource: "organization_content",
             optionLabel: "title",
           },
           required: true,
@@ -727,15 +717,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "id, event_content_id, locale, title, event_content:event_content!inner(id, title, organization_id)",
+          "id, organization_content_id, locale, title, organization_content:organization_content!inner(id, title, organization_id)",
       },
       columns: [
         {
-          key: "event_content",
+          key: "organization_content",
           title: "Content",
           render: (_, record) => {
             const data = record as Record<string, any>;
-            return data.event_content?.title ?? data.event_content_id ?? "—";
+            return (
+              data.organization_content?.title ??
+              data.organization_content_id ??
+              "—"
+            );
           },
         },
         { key: "locale", title: "Locale", type: "text" },

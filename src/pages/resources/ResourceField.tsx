@@ -1,5 +1,5 @@
 import { useSelect } from "@refinedev/antd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   App,
   DatePicker,
@@ -119,46 +119,65 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
   const storePublicUrl = storage?.storePublicUrl ?? false;
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const tempRecordIdRef = useRef<string | undefined>(undefined);
 
-  const ensureTempRecordSegment = useCallback(() => {
-    if (!tempRecordIdRef.current) {
-      tempRecordIdRef.current =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? `draft-${crypto.randomUUID()}`
-          : `draft-${Date.now().toString(16)}`;
-    }
-    return tempRecordIdRef.current;
-  }, []);
+  const normalizeBucketName = useCallback(
+    (bucket?: string | null): string | undefined => {
+      if (!bucket) {
+        return bucket ?? undefined;
+      }
+      const trimmed = bucket.trim();
+      if (
+        trimmed === "organization_content" ||
+        trimmed === "event-assets" ||
+        trimmed === "event_content"
+      ) {
+        return "organization_assets";
+      }
+      return trimmed;
+    },
+    []
+  );
 
-  const getBucket = useCallback(() => {
+  const getBucket = useCallback((): string => {
     if (!storage) {
       throw new Error("Storage configuration missing");
     }
     if (!storage.bucket) {
       throw new Error("Storage bucket is not configured.");
     }
+    const normalizedDefault = normalizeBucketName(storage.bucket);
+    if (!normalizedDefault) {
+      throw new Error("Storage bucket is not configured.");
+    }
     if (!storage.bucketField || !form) {
-      return storage.bucket;
+      return normalizedDefault;
     }
     const rawBucket = form.getFieldValue(storage.bucketField);
-    return typeof rawBucket === "string" && rawBucket.trim().length > 0
-      ? rawBucket.trim()
-      : storage.bucket;
-  }, [form, storage]);
+    const resolvedBucket =
+      typeof rawBucket === "string" && rawBucket.trim().length > 0
+        ? rawBucket.trim()
+        : storage.bucket;
+    const normalizedBucket =
+      normalizeBucketName(resolvedBucket) ?? normalizedDefault;
+    if (!normalizedBucket) {
+      throw new Error("Storage bucket is not configured.");
+    }
+    return normalizedBucket;
+  }, [form, normalizeBucketName, storage]);
 
   useEffect(() => {
     if (!storage || !form || !storage.bucketField) {
       return;
     }
     const rawBucket = form.getFieldValue(storage.bucketField);
-    if (
-      (!rawBucket || String(rawBucket).trim().length === 0) &&
-      storage.bucket
-    ) {
-      form.setFieldValue(storage.bucketField, storage.bucket);
+    const normalizedBucket =
+      normalizeBucketName(
+        typeof rawBucket === "string" ? rawBucket.trim() : storage.bucket
+      ) ?? normalizeBucketName(storage.bucket);
+    if (normalizedBucket) {
+      form.setFieldValue(storage.bucketField, normalizedBucket);
     }
-  }, [form, storage]);
+  }, [form, normalizeBucketName, storage]);
 
   useEffect(() => {
     if (!storage) {
@@ -197,7 +216,8 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
       if (!storage || storePublicUrl || !path) {
         return;
       }
-      const bucketName = bucketOverride ?? getBucket();
+      const bucketName =
+        normalizeBucketName(bucketOverride) ?? getBucket();
       const { error } = await supabaseClient.storage
         .from(bucketName)
         .remove([path]);
@@ -208,7 +228,7 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
         });
       }
     },
-    [getBucket, notification, storage, storePublicUrl]
+    [getBucket, normalizeBucketName, notification, storage, storePublicUrl]
   );
 
   const handleRemove = useCallback(
@@ -228,9 +248,11 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
           ? form.getFieldValue(storage.bucketField)
           : storage.bucket;
       const normalizedBucket =
-        typeof currentBucket === "string" && currentBucket.trim().length > 0
-          ? currentBucket.trim()
-          : storage.bucket;
+        normalizeBucketName(
+          typeof currentBucket === "string" && currentBucket.trim().length > 0
+            ? currentBucket.trim()
+            : storage.bucket
+        ) ?? getBucket();
 
       const referencedPath =
         (typeof value === "string" && value.trim().length > 0
@@ -243,13 +265,22 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
           ? String((file.response as Record<string, any>).path ?? "")
           : undefined);
 
-      await removeFromStorage(referencedPath ?? null, normalizedBucket ?? null);
+      await removeFromStorage(referencedPath ?? null, normalizedBucket);
 
       setFileList([]);
       onChange?.(null);
       return true;
     },
-    [disabled, form, onChange, removeFromStorage, storage, value]
+    [
+      disabled,
+      form,
+      getBucket,
+      normalizeBucketName,
+      onChange,
+      removeFromStorage,
+      storage,
+      value,
+    ]
   );
 
   const handlePreview = useCallback((file: UploadFile) => {
@@ -323,43 +354,60 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
         storage.organizationField && form
           ? form.getFieldValue(storage.organizationField)
           : undefined;
-      const recordValue =
+      let recordValue =
         storage.recordIdField && form
           ? form.getFieldValue(storage.recordIdField)
           : undefined;
 
       const folderSegments: string[] = [];
 
-      if (storage.folder) {
-        const cleaned = storage.folder
-          .split("/")
-          .map((segment) => segment.trim())
-          .filter((segment) => segment.length > 0)
-          .join("/");
-        if (cleaned.length > 0) {
-          folderSegments.push(cleaned);
-        }
-      }
-
       if (storage.includeOrganizationIdInPath) {
-        folderSegments.push(
-          normalizePathSegment(
-            organizationValue,
-            mode === "edit" ? "org-unknown" : "org-pending"
-          )
+        const normalizedOrganization = normalizePathSegment(
+          organizationValue,
+          ""
         );
+        if (!normalizedOrganization) {
+          const message = "Select an organization before uploading.";
+          notification.error({
+            message: "Upload blocked",
+            description: message,
+          });
+          options.onError?.(new Error(message));
+          return;
+        }
+        folderSegments.push(normalizedOrganization);
       }
 
       if (storage.includeRecordIdInPath) {
+        if (
+          (!recordValue || String(recordValue).trim().length === 0) &&
+          storage.recordIdField &&
+          form
+        ) {
+          const generatedId =
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `${Date.now().toString(16)}-${Math.random()
+                  .toString(16)
+                  .slice(2, 10)}`;
+          form.setFieldValue(storage.recordIdField, generatedId);
+          recordValue = generatedId;
+        }
+
         const normalizedRecord = normalizePathSegment(
           recordValue,
-          mode === "edit" ? "record-unknown" : ""
+          ""
         );
-        if (normalizedRecord.length > 0) {
-          folderSegments.push(normalizedRecord);
-        } else {
-          folderSegments.push(ensureTempRecordSegment());
+        if (!normalizedRecord) {
+          const message = "Unable to determine content ID.";
+          notification.error({
+            message: "Upload blocked",
+            description: message,
+          });
+          options.onError?.(new Error(message));
+          return;
         }
+        folderSegments.push(normalizedRecord);
       }
 
       const folder =
@@ -405,11 +453,15 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
             ? value.trim()
             : undefined;
         if (previousPath) {
-          const previousBucket =
+          const previousBucket = normalizeBucketName(
             storage.bucketField && form
               ? form.getFieldValue(storage.bucketField)
-              : bucketName;
-          await removeFromStorage(previousPath, previousBucket ?? bucketName);
+              : bucketName
+          );
+          await removeFromStorage(
+            previousPath,
+            previousBucket ?? bucketName
+          );
         }
       }
 
@@ -443,7 +495,6 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
     },
     [
       disabled,
-      ensureTempRecordSegment,
       form,
       getBucket,
       mode,
@@ -453,6 +504,7 @@ const StorageImageInput: React.FC<StorageImageInputProps> = ({
       storage,
       storePublicUrl,
       value,
+      normalizeBucketName,
     ]
   );
 

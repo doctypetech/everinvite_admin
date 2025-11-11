@@ -74,14 +74,14 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     sections: [{ resource: "profiles", title: "Profiles" }],
   },
   {
-    name: "event-content",
+    name: "organization-content",
     label: "Content",
-    route: "/admin/event-content",
+    route: "/admin/organization-content",
     hidden: true,
     sections: [
-      { resource: "event_content", title: "Content" },
+      { resource: "organization_content", title: "Content" },
       {
-        resource: "event_content_translations",
+        resource: "organization_content_translations",
         title: "Content Translations",
       },
     ],

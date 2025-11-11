@@ -316,7 +316,7 @@ type OrganizationRelatedResource = {
 
 export const ORGANIZATION_RELATED_RESOURCES: OrganizationRelatedResource[] = [
   { resource: "invitees", label: "Invitees" },
-  { resource: "event_content", label: "Content" },
+  { resource: "organization_content", label: "Content" },
   { resource: "trivia_questions", label: "Trivia" },
   { resource: "trivia_options", label: "Trivia" },
   { resource: "trivia_answers", label: "Trivia" },
@@ -329,7 +329,7 @@ export const ORGANIZATION_RELATED_RESOURCE_NAMES = new Set(
 );
 
 export const ORGANIZATION_RELATED_GROUP_NAMES = new Set([
-  "event-content",
+  "organization-content",
   "invitees",
 ]);
 

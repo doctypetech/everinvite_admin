@@ -42,7 +42,7 @@ const getResourceDefinition = (
 
 const ORGANIZATION_ACTION_ICON_MAP: Record<string, ReactNode> = {
   invitees: <UsergroupAddOutlined />,
-  event_content: <FileTextOutlined />,
+  organization_content: <FileTextOutlined />,
   trivia_questions: <BulbOutlined />,
 };
 
