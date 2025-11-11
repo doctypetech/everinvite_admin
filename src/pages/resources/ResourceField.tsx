@@ -18,6 +18,7 @@ type Mode = "create" | "edit";
 type ResourceFieldProps = {
   field: FieldDefinition;
   mode: Mode;
+  lockedValue?: unknown;
 };
 
 const getFieldPlaceholder = (field: FieldDefinition) => {
@@ -55,8 +56,11 @@ const getFieldPlaceholder = (field: FieldDefinition) => {
 export const ResourceField: React.FC<ResourceFieldProps> = ({
   field,
   mode,
+  lockedValue,
 }) => {
+  const isLocked = lockedValue !== undefined;
   const isDisabled =
+    isLocked ||
     (mode === "create" && field.disabledOnCreate) ||
     (mode === "edit" && field.disabledOnEdit);
 
@@ -133,6 +137,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
         optionLabel: field.relation.optionLabel as any,
         optionValue: (field.relation.optionValue ?? "id") as any,
         meta: field.relation.meta,
+        defaultValue: lockedValue as any,
       });
 
       return (
@@ -146,8 +151,8 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
           <Select
             {...selectProps}
             disabled={isDisabled}
-            allowClear={!field.required}
-            showSearch
+            allowClear={!field.required && !isLocked}
+            showSearch={!isLocked}
             placeholder={selectProps.placeholder ?? placeholder}
           />
         </Form.Item>
@@ -164,7 +169,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
       >
         <Select
           disabled={isDisabled}
-          allowClear={!field.required}
+          allowClear={!field.required && !isLocked}
           options={field.enumValues}
           placeholder={placeholder}
         />

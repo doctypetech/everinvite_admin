@@ -9,7 +9,7 @@ import {
 import { ResourceForm } from "./ResourceForm";
 import { useNavigate } from "react-router";
 import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
-import { ORGANIZATION_RELATED_RESOURCE_NAMES } from "./helpers";
+import { ORGANIZATION_RELATED_RESOURCE_NAMES, resolveOrgFilterField } from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -25,6 +25,12 @@ export const GenericEdit: React.FC = () => {
   const isOrganizationRelatedResource = definition
     ? ORGANIZATION_RELATED_RESOURCE_NAMES.has(definition.name)
     : false;
+  const organizationField = definition
+    ? resolveOrgFilterField(definition)
+    : undefined;
+  const hasOrganizationField =
+    !!organizationField &&
+    !!definition?.form.fields.some((field) => field.key === organizationField);
 
   const { formProps, saveButtonProps, formLoading } = useForm({
     resource: resourceName,
@@ -36,6 +42,16 @@ export const GenericEdit: React.FC = () => {
       navigate(target, { replace: true });
     },
   });
+
+  const initialValues =
+    formProps.initialValues as Record<string, unknown> | undefined;
+  const lockedFields =
+    hasOrganizationField &&
+    organizationField &&
+    initialValues &&
+    initialValues[organizationField] !== undefined
+      ? { [organizationField]: initialValues[organizationField] }
+      : undefined;
 
   if (!definition) {
     return (
@@ -67,7 +83,12 @@ export const GenericEdit: React.FC = () => {
         </Space>
       )}
     >
-      <ResourceForm fields={definition.form.fields} mode="edit" formProps={formProps} />
+      <ResourceForm
+        fields={definition.form.fields}
+        mode="edit"
+        formProps={formProps}
+        lockedFields={lockedFields}
+      />
     </Edit>
   );
 };

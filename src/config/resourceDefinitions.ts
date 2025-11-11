@@ -415,6 +415,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             optionLabel: "name",
           },
           required: true,
+          disabledOnEdit: true,
         },
         {
           key: "kind",
@@ -482,6 +483,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             optionLabel: "name",
           },
           required: true,
+          disabledOnEdit: true,
         },
         {
           key: "title",
@@ -711,6 +713,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             optionLabel: "name",
           },
           required: true,
+          disabledOnEdit: true,
         },
         {
           key: "full_name",
@@ -869,6 +872,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             optionLabel: "name",
           },
           required: true,
+          disabledOnEdit: true,
         },
         {
           key: "source",
@@ -1035,6 +1039,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             optionLabel: "name",
           },
           required: true,
+          disabledOnEdit: true,
         },
         {
           key: "question",

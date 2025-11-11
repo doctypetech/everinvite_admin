@@ -35,21 +35,24 @@ export const GenericCreate: React.FC = () => {
   const organizationField = definition
     ? resolveOrgFilterField(definition)
     : undefined;
+  const hasOrganizationField =
+    !!organizationField &&
+    !!definition?.form.fields.some((field) => field.key === organizationField);
   const allowOrganizationPrefill =
-    organizationField &&
+    hasOrganizationField &&
     (organizationField === "organization_id" ||
       organizationField.endsWith(".organization_id"));
+  const lockedFields =
+    organizationIdParam && allowOrganizationPrefill && organizationField
+      ? { [organizationField]: organizationIdParam }
+      : undefined;
 
   const { formProps, saveButtonProps } = useForm({
     resource: resourceName,
     meta: definition?.form?.meta,
     redirect: false,
     defaultValues:
-      organizationIdParam && allowOrganizationPrefill
-        ? {
-            [organizationField]: organizationIdParam,
-          }
-        : undefined,
+      lockedFields ?? undefined,
     onMutationSuccess: () => {
       const target =
         groupRoute ?? definition?.routes.list ?? "/admin";
@@ -86,7 +89,12 @@ export const GenericCreate: React.FC = () => {
         </Space>
       )}
     >
-      <ResourceForm fields={definition.form.fields} mode="create" formProps={formProps} />
+      <ResourceForm
+        fields={definition.form.fields}
+        mode="create"
+        formProps={formProps}
+        lockedFields={lockedFields}
+      />
     </Create>
   );
 };

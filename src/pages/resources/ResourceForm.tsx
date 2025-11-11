@@ -11,24 +11,28 @@ type ResourceFormProps = {
   fields: FieldDefinition[];
   mode: Mode;
   formProps: FormProps;
+  lockedFields?: Record<string, unknown>;
 };
 
 export const ResourceForm: React.FC<ResourceFormProps> = ({
   fields,
   mode,
   formProps,
+  lockedFields,
 }) => {
   const { notification } = App.useApp();
 
   const defaults = useMemo(() => {
-    const initial: Record<string, unknown> = {};
+    const initial: Record<string, unknown> = {
+      ...(lockedFields ?? {}),
+    };
     fields.forEach((field) => {
       if (field.defaultValue !== undefined) {
         initial[field.key] = field.defaultValue;
       }
     });
     return initial;
-  }, [fields]);
+  }, [fields, lockedFields]);
 
   const { form, onFinish, initialValues: rawInitialValues, ...restFormProps } =
     formProps;
@@ -37,9 +41,10 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
     const initial = {
       ...defaults,
       ...(rawInitialValues as Record<string, unknown> | undefined),
+      ...(lockedFields ?? {}),
     };
     return convertInitialValues(initial, fields);
-  }, [defaults, fields, rawInitialValues]);
+  }, [defaults, fields, lockedFields, rawInitialValues]);
 
   useEffect(() => {
     if (form && mergedInitialValues) {
@@ -50,7 +55,13 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
   const handleFinish = useCallback(
     async (values: Record<string, unknown>) => {
       try {
-        const prepared = serializeFormValues(values, fields);
+        const prepared = serializeFormValues(
+          {
+            ...values,
+            ...(lockedFields ?? {}),
+          },
+          fields
+        );
         await onFinish?.(prepared);
       } catch (error) {
         notification.error({
@@ -59,7 +70,7 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
         });
       }
     },
-    [fields, notification, onFinish]
+    [fields, lockedFields, notification, onFinish]
   );
 
   return (
@@ -71,7 +82,12 @@ export const ResourceForm: React.FC<ResourceFormProps> = ({
       initialValues={mergedInitialValues}
     >
       {fields.map((field) => (
-        <ResourceField key={field.key} field={field} mode={mode} />
+        <ResourceField
+          key={field.key}
+          field={field}
+          mode={mode}
+          lockedValue={lockedFields?.[field.key]}
+        />
       ))}
     </Form>
   );
