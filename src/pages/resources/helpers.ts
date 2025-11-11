@@ -4,6 +4,7 @@ import type {
   FieldType,
   ResourceDefinition,
 } from "../../config/resourceDefinitions";
+import { RESOURCE_DEFINITION_MAP } from "../../config/resourceDefinitions";
 
 const isRecord = (value: unknown): value is Record<string, any> =>
   typeof value === "object" && value !== null;
@@ -290,6 +291,52 @@ export const resolveOrgFilterField = (
   );
 
   return hasOrganizationField ? "organization_id" : undefined;
+};
+
+type OrganizationRelatedResource = {
+  resource: string;
+  label: string;
+};
+
+export const ORGANIZATION_RELATED_RESOURCES: OrganizationRelatedResource[] = [
+  { resource: "invitees", label: "Invitees" },
+  { resource: "event_content", label: "Content" },
+  { resource: "trivia_questions", label: "Trivia" },
+];
+
+export const ORGANIZATION_RELATED_RESOURCE_NAMES = new Set(
+  ORGANIZATION_RELATED_RESOURCES.map(({ resource }) => resource)
+);
+
+export const ORGANIZATION_RELATED_GROUP_NAMES = new Set([
+  "event-content",
+  "invitees",
+  "trivia",
+]);
+
+export const buildOrganizationResourceListUrl = (
+  resourceName: string,
+  organizationId: string | number
+): string | undefined => {
+  const definition = RESOURCE_DEFINITION_MAP[resourceName];
+
+  if (!definition) {
+    return undefined;
+  }
+
+  const listPath = definition.routes.list;
+  const filterField = resolveOrgFilterField(definition);
+
+  if (!listPath || !filterField) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams();
+  params.append("filters[0][field]", filterField);
+  params.append("filters[0][operator]", "eq");
+  params.append("filters[0][value]", String(organizationId));
+
+  return `${listPath}?${params.toString()}`;
 };
 
 

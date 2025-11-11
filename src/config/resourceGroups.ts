@@ -10,6 +10,10 @@ export type ResourceGroupDefinition = {
    */
   name: string;
   /**
+   * When true, the group is omitted from the sidebar navigation.
+   */
+  hidden?: boolean;
+  /**
    * Human readable label shown in the sidebar.
    */
   label: string;
@@ -60,13 +64,14 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
   },
   {
     name: "event-content",
-    label: "Event Content",
+    label: "Content",
     route: "/admin/event-content",
+    hidden: true,
     sections: [
-      { resource: "event_content", title: "Event Content" },
+      { resource: "event_content", title: "Content" },
       {
         resource: "event_content_translations",
-        title: "Event Content Translations",
+        title: "Content Translations",
       },
     ],
   },
@@ -74,6 +79,7 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     name: "invitees",
     label: "Invitees",
     route: "/admin/invitees",
+    hidden: true,
     sections: [
       { resource: "invitees", title: "Invitees" },
       { resource: "invitee_rsvps", title: "Invitee RSVPs" },
@@ -92,6 +98,7 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     name: "trivia",
     label: "Trivia",
     route: "/admin/trivia",
+    hidden: true,
     sections: [
       { resource: "trivia_questions", title: "Trivia Questions" },
       { resource: "trivia_options", title: "Trivia Options" },

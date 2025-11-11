@@ -1,6 +1,7 @@
 import { Create, useForm } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
-import { Result } from "antd";
+import { Button, Result, Space } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import {
   RESOURCE_DEFINITION_MAP,
   type ResourceDefinition,
@@ -8,6 +9,7 @@ import {
 import { ResourceForm } from "./ResourceForm";
 import { useNavigate } from "react-router";
 import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
+import { ORGANIZATION_RELATED_RESOURCE_NAMES } from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -20,6 +22,9 @@ export const GenericCreate: React.FC = () => {
   const navigate = useNavigate();
   const groupRoute =
     resourceName && RESOURCE_GROUP_ROUTE_BY_RESOURCE[resourceName];
+  const isOrganizationRelatedResource = definition
+    ? ORGANIZATION_RELATED_RESOURCE_NAMES.has(definition.name)
+    : false;
 
   const { formProps, saveButtonProps } = useForm({
     resource: resourceName,
@@ -47,6 +52,19 @@ export const GenericCreate: React.FC = () => {
       title={`Create ${definition.label}`}
       saveButtonProps={saveButtonProps}
       resource={definition.name}
+      headerButtons={({ defaultButtons }) => (
+        <Space wrap>
+          {isOrganizationRelatedResource && (
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/admin/organization")}
+            >
+              Back to Organizations
+            </Button>
+          )}
+          {defaultButtons}
+        </Space>
+      )}
     >
       <ResourceForm fields={definition.form.fields} mode="create" formProps={formProps} />
     </Create>

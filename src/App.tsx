@@ -138,15 +138,22 @@ const LIST_COMPONENT_OVERRIDES: Record<string, FC> = {
 };
 
 function App() {
-  const refineResources = useMemo(
-    () => [
-      ...RESOURCE_GROUP_DEFINITIONS.map(mapGroupToRefine),
-      ...RESOURCE_DEFINITIONS.map(mapResourceToRefine),
-    ],
+  const visibleGroupDefinitions = useMemo(
+    () =>
+      RESOURCE_GROUP_DEFINITIONS.filter((definition) => !definition.hidden),
     []
   );
 
-  const defaultGroup = RESOURCE_GROUP_DEFINITIONS[0];
+  const refineResources = useMemo(
+    () => [
+      ...visibleGroupDefinitions.map(mapGroupToRefine),
+      ...RESOURCE_DEFINITIONS.map(mapResourceToRefine),
+    ],
+    [visibleGroupDefinitions]
+  );
+
+  const defaultGroup =
+    visibleGroupDefinitions[0] ?? RESOURCE_GROUP_DEFINITIONS[0];
   const groupRouteNames = useMemo(
     () =>
       new Set(

@@ -465,7 +465,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   },
   {
     name: "event_content",
-    label: "Event Content",
+    label: "Content",
     routes: {
       list: "/admin/event-content",
       create: "/admin/event-content/create",
@@ -631,7 +631,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   },
   {
     name: "event_content_translations",
-    label: "Event Content Translations",
+    label: "Content Translations",
     routes: {
       list: "/admin/event-content-translations",
       create: "/admin/event-content-translations/create",
@@ -641,7 +641,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       fields: [
         {
           key: "event_content_id",
-          label: "Event Content",
+          label: "Content",
           type: "select",
           relation: {
             resource: "event_content",
@@ -680,7 +680,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       columns: [
         {
           key: "event_content",
-          title: "Event Content",
+          title: "Content",
           render: (_, record) => {
             const data = record as Record<string, any>;
             return data.event_content?.title ?? data.event_content_id ?? "—";
