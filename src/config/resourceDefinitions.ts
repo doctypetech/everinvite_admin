@@ -9,6 +9,7 @@ export type FieldType =
   | "select"
   | "json"
   | "datetime"
+  | "image"
   | "themeColors";
 
 export type FieldRelation = {
@@ -25,6 +26,20 @@ export type FieldOption = {
   value: string | number | boolean;
 };
 
+export interface StorageFieldOptions {
+  bucket: string;
+  folder?: string;
+  maxSizeMB?: number;
+  accept?: string[];
+  storePublicUrl?: boolean;
+  cacheControlSeconds?: string;
+  bucketField?: string;
+  organizationField?: string;
+  recordIdField?: string;
+  includeOrganizationIdInPath?: boolean;
+  includeRecordIdInPath?: boolean;
+}
+
 export interface FieldDefinition {
   key: string;
   label: string;
@@ -37,6 +52,7 @@ export interface FieldDefinition {
   disabledOnCreate?: boolean;
   disabledOnEdit?: boolean;
   defaultValue?: unknown;
+  storage?: StorageFieldOptions;
   min?: number;
   max?: number;
   step?: number;
@@ -473,6 +489,10 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       edit: "/admin/event-content/edit/:id",
     },
     form: {
+      meta: {
+        select:
+          "id, organization_id, title, body_html, cta, image_bucket, image_path, created_at, updated_at",
+      },
       fields: [
         {
           key: "organization_id",
@@ -500,12 +520,41 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           label: "CTA (JSON)",
           type: "json",
         },
+        {
+          key: "image_bucket",
+          label: "Image Bucket",
+          type: "text",
+          defaultValue: "event-assets",
+          helperText: "Supabase storage bucket (read-only).",
+          disabledOnCreate: true,
+          disabledOnEdit: true,
+        },
+        {
+          key: "image_path",
+          label: "Hero Image",
+          type: "image",
+          helperText:
+            "Upload an image to associate with this piece of content. We store the Supabase storage path.",
+          storage: {
+            bucket: "event-assets",
+            bucketField: "image_bucket",
+            folder: "event-content",
+            organizationField: "organization_id",
+            recordIdField: "id",
+            includeOrganizationIdInPath: true,
+            includeRecordIdInPath: true,
+            accept: ["image/png", "image/jpeg", "image/webp"],
+            maxSizeMB: 5,
+            storePublicUrl: false,
+            cacheControlSeconds: "3600",
+          },
+        },
       ],
     },
     list: {
       meta: {
         select:
-          "id, organization_id, title, created_at, organization:organizations(id, name)",
+          "id, organization_id, title, image_bucket, image_path, created_at, organization:organizations(id, name)",
       },
       columns: [
         {

@@ -38,6 +38,10 @@ export const formatCellValue = (
       } catch {
         return String(value);
       }
+    case "image":
+      return typeof value === "string" && value.trim().length > 0
+        ? value
+        : "-";
     default:
       return String(value);
   }
@@ -269,6 +273,14 @@ export const serializeFormValues = (
           ...value,
           theme: normalizedTheme,
         };
+        break;
+      }
+      case "image": {
+        if (rawValue === undefined || rawValue === null || rawValue === "") {
+          output[field.key] = null;
+        } else {
+          output[field.key] = rawValue;
+        }
         break;
       }
       default:
