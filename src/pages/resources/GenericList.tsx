@@ -1,21 +1,14 @@
 import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
-import {
-  Alert,
-  Button,
-  Result,
-  Space,
-  Table,
-  Tooltip,
-} from "antd";
+import { Alert, Button, Result, Space, Table, Tabs, Tooltip } from "antd";
 import {
   ArrowLeftOutlined,
   FileTextOutlined,
-  QuestionCircleOutlined,
   UsergroupAddOutlined,
+  BulbOutlined,
 } from "@ant-design/icons";
 import { useMemo, type ReactNode } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {
   RESOURCE_DEFINITION_MAP,
   type ResourceDefinition,
@@ -25,7 +18,15 @@ import {
   ORGANIZATION_RELATED_RESOURCE_NAMES,
   ORGANIZATION_RELATED_RESOURCES,
   buildOrganizationResourceListUrl,
+  resolveOrgFilterField,
+  buildOrganizationGroupUrl,
+  resolveResourceGroupForResource,
+  TRIVIA_RESOURCE_NAMES,
 } from "./helpers";
+import {
+  RESOURCE_GROUP_DEFINITION_MAP,
+  RESOURCE_GROUP_NAME_BY_RESOURCE,
+} from "../../config/resourceGroups";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -33,7 +34,14 @@ const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
 const ORGANIZATION_ACTION_ICON_MAP: Record<string, ReactNode> = {
   invitees: <UsergroupAddOutlined />,
   event_content: <FileTextOutlined />,
-  trivia_questions: <QuestionCircleOutlined />,
+  trivia_questions: <BulbOutlined />,
+};
+
+type GroupNavigationTab = {
+  key: string;
+  label: string;
+  path: string;
+  filterField?: string;
 };
 
 export const GenericList: React.FC = () => {
@@ -42,9 +50,69 @@ export const GenericList: React.FC = () => {
     typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
   const navigate = useNavigate();
+  const location = useLocation();
   const isOrganizationRelatedResource = definition
     ? ORGANIZATION_RELATED_RESOURCE_NAMES.has(definition.name)
     : false;
+  const groupName = resourceName
+    ? RESOURCE_GROUP_NAME_BY_RESOURCE[resourceName]
+    : undefined;
+  const groupDefinition = groupName
+    ? RESOURCE_GROUP_DEFINITION_MAP[groupName]
+    : undefined;
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
+  const viewMode = searchParams.get("view");
+  const currentFilterField = searchParams.get("filters[0][field]");
+  const currentFilterValue = searchParams.get("filters[0][value]");
+  const organizationIdParam =
+    searchParams.get("organizationId") ?? currentFilterValue ?? undefined;
+
+  const filteredGroupSections = useMemo(() => {
+    if (!groupDefinition) {
+      return [];
+    }
+    if (viewMode === "trivia") {
+      return groupDefinition.sections.filter((section) =>
+        TRIVIA_RESOURCE_NAMES.has(section.resource)
+      );
+    }
+    return groupDefinition.sections.filter(
+      (section) => !TRIVIA_RESOURCE_NAMES.has(section.resource)
+    );
+  }, [groupDefinition, viewMode]);
+
+  const showGroupTabs =
+    filteredGroupSections.length > 1;
+
+  const groupNavigationTabs = useMemo<GroupNavigationTab[]>(() => {
+    if (!showGroupTabs || !groupDefinition) {
+      return [];
+    }
+
+    const tabs: GroupNavigationTab[] = [];
+
+    filteredGroupSections.forEach((section) => {
+      const sectionDefinition = RESOURCE_DEFINITION_MAP[section.resource];
+      const listPath = sectionDefinition?.routes.list;
+      const filterField = resolveOrgFilterField(sectionDefinition);
+
+      if (!sectionDefinition || !listPath) {
+        return;
+      }
+
+      tabs.push({
+        key: section.resource,
+        label: section.title ?? sectionDefinition.label,
+        path: listPath,
+        filterField,
+      });
+    });
+
+    return tabs;
+  }, [filteredGroupSections, showGroupTabs]);
 
   const getRecordId = useMemo(
     () =>
@@ -53,7 +121,7 @@ export const GenericList: React.FC = () => {
     [definition?.getRecordId]
   );
 
-  const { tableProps } = useTable({
+  const { tableProps, tableQuery } = useTable({
     resource: resourceName,
     meta: definition?.list?.meta,
     sorters: {
@@ -84,6 +152,21 @@ export const GenericList: React.FC = () => {
     );
   }
 
+  if (tableQuery?.isError) {
+    return (
+      <Result
+        status="error"
+        title="Failed to load data"
+        subTitle={tableQuery.error?.message ?? "An unexpected error occurred while loading this resource."}
+        extra={
+          <Button type="primary" onClick={() => tableQuery.refetch()}>
+            Retry
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
     <List
       title={definition.label}
@@ -102,6 +185,58 @@ export const GenericList: React.FC = () => {
         </Space>
       )}
     >
+      {groupNavigationTabs.length > 0 && (
+        <Tabs
+          activeKey={definition.name}
+          onChange={(key) => {
+            const tab = groupNavigationTabs.find((item) => item.key === key);
+            if (!tab) {
+              return;
+            }
+
+            const params = new URLSearchParams(location.search);
+            params.delete("filters[0][field]");
+            params.delete("filters[0][operator]");
+            params.delete("filters[0][value]");
+            params.delete("tab");
+
+            if (currentFilterValue && tab.filterField) {
+              params.set("filters[0][field]", tab.filterField);
+              params.set("filters[0][operator]", "eq");
+              params.set("filters[0][value]", currentFilterValue);
+            }
+
+            if (organizationIdParam) {
+              params.set("organizationId", organizationIdParam);
+            } else {
+              params.delete("organizationId");
+            }
+
+            if (TRIVIA_RESOURCE_NAMES.has(tab.key)) {
+              params.set("view", "trivia");
+            } else if (params.get("view") === "trivia") {
+              params.delete("view");
+            }
+
+            if (tab.key !== groupNavigationTabs[0]?.key) {
+              params.set("tab", tab.key);
+            } else {
+              params.delete("tab");
+            }
+
+            const searchString = params.toString();
+            navigate({
+              pathname: tab.path,
+              search: searchString ? `?${searchString}` : "",
+            });
+          }}
+          items={groupNavigationTabs.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+          }))}
+          style={{ marginBottom: 16 }}
+        />
+      )}
       <Table
         {...tableProps}
         rowKey={(record) => getRecordId(record as Record<string, any>)}
@@ -131,10 +266,19 @@ export const GenericList: React.FC = () => {
               <Space>
                 {definition.name === "organizations" &&
                   ORGANIZATION_RELATED_RESOURCES.map(({ resource, label }) => {
-                    const to = buildOrganizationResourceListUrl(
-                      resource,
-                      organizationId
-                    );
+                    const groupForResource =
+                      resolveResourceGroupForResource(resource);
+                    const to =
+                      groupForResource === "organization"
+                        ? buildOrganizationGroupUrl(
+                            groupForResource,
+                            organizationId,
+                            resource
+                          )
+                        : buildOrganizationResourceListUrl(
+                            resource,
+                            organizationId
+                          );
                     const icon = ORGANIZATION_ACTION_ICON_MAP[resource];
 
                     if (!to || !icon) {

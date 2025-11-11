@@ -7,9 +7,12 @@ import {
   type ResourceDefinition,
 } from "../../config/resourceDefinitions";
 import { ResourceForm } from "./ResourceForm";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
-import { ORGANIZATION_RELATED_RESOURCE_NAMES } from "./helpers";
+import {
+  ORGANIZATION_RELATED_RESOURCE_NAMES,
+  resolveOrgFilterField,
+} from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -20,16 +23,33 @@ export const GenericCreate: React.FC = () => {
     typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
   const navigate = useNavigate();
+  const location = useLocation();
   const groupRoute =
     resourceName && RESOURCE_GROUP_ROUTE_BY_RESOURCE[resourceName];
   const isOrganizationRelatedResource = definition
     ? ORGANIZATION_RELATED_RESOURCE_NAMES.has(definition.name)
     : false;
+  const searchParams = new URLSearchParams(location.search);
+  const organizationIdParam =
+    searchParams.get("organizationId") ?? searchParams.get("filters[0][value]");
+  const organizationField = definition
+    ? resolveOrgFilterField(definition)
+    : undefined;
+  const allowOrganizationPrefill =
+    organizationField &&
+    (organizationField === "organization_id" ||
+      organizationField.endsWith(".organization_id"));
 
   const { formProps, saveButtonProps } = useForm({
     resource: resourceName,
     meta: definition?.form?.meta,
     redirect: false,
+    defaultValues:
+      organizationIdParam && allowOrganizationPrefill
+        ? {
+            [organizationField]: organizationIdParam,
+          }
+        : undefined,
     onMutationSuccess: () => {
       const target =
         groupRoute ?? definition?.routes.list ?? "/admin";

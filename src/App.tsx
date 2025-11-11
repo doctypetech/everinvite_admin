@@ -66,7 +66,6 @@ const GROUP_ICON_MAP: Record<string, ReactNode> = {
   "event-content": <FileTextOutlined />,
   invitees: <UsergroupAddOutlined />,
   imports: <CloudUploadOutlined />,
-  trivia: <BulbOutlined />,
   faq: <QuestionCircleOutlined />,
 };
 
@@ -121,6 +120,7 @@ const mapGroupToRefine = (definition: ResourceGroupDefinition) => {
     meta: {
       label: definition.label,
       icon: GROUP_ICON_MAP[definition.name] ?? defaultIcon,
+      hide: definition.hidden ?? false,
     },
     options: {
       label: definition.label,
@@ -138,22 +138,17 @@ const LIST_COMPONENT_OVERRIDES: Record<string, FC> = {
 };
 
 function App() {
-  const visibleGroupDefinitions = useMemo(
-    () =>
-      RESOURCE_GROUP_DEFINITIONS.filter((definition) => !definition.hidden),
+  const refineResources = useMemo(
+    () => [
+      ...RESOURCE_GROUP_DEFINITIONS.map(mapGroupToRefine),
+      ...RESOURCE_DEFINITIONS.map(mapResourceToRefine),
+    ],
     []
   );
 
-  const refineResources = useMemo(
-    () => [
-      ...visibleGroupDefinitions.map(mapGroupToRefine),
-      ...RESOURCE_DEFINITIONS.map(mapResourceToRefine),
-    ],
-    [visibleGroupDefinitions]
-  );
-
   const defaultGroup =
-    visibleGroupDefinitions[0] ?? RESOURCE_GROUP_DEFINITIONS[0];
+    RESOURCE_GROUP_DEFINITIONS.find((definition) => !definition.hidden) ??
+    RESOURCE_GROUP_DEFINITIONS[0];
   const groupRouteNames = useMemo(
     () =>
       new Set(

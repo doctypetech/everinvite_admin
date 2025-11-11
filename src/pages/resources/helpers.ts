@@ -5,6 +5,10 @@ import type {
   ResourceDefinition,
 } from "../../config/resourceDefinitions";
 import { RESOURCE_DEFINITION_MAP } from "../../config/resourceDefinitions";
+import {
+  RESOURCE_GROUP_DEFINITION_MAP,
+  RESOURCE_GROUP_NAME_BY_RESOURCE,
+} from "../../config/resourceGroups";
 
 const isRecord = (value: unknown): value is Record<string, any> =>
   typeof value === "object" && value !== null;
@@ -302,6 +306,10 @@ export const ORGANIZATION_RELATED_RESOURCES: OrganizationRelatedResource[] = [
   { resource: "invitees", label: "Invitees" },
   { resource: "event_content", label: "Content" },
   { resource: "trivia_questions", label: "Trivia" },
+  { resource: "trivia_options", label: "Trivia" },
+  { resource: "trivia_answers", label: "Trivia" },
+  { resource: "trivia_question_translations", label: "Trivia" },
+  { resource: "trivia_option_translations", label: "Trivia" },
 ];
 
 export const ORGANIZATION_RELATED_RESOURCE_NAMES = new Set(
@@ -311,7 +319,14 @@ export const ORGANIZATION_RELATED_RESOURCE_NAMES = new Set(
 export const ORGANIZATION_RELATED_GROUP_NAMES = new Set([
   "event-content",
   "invitees",
-  "trivia",
+]);
+
+export const TRIVIA_RESOURCE_NAMES = new Set<string>([
+  "trivia_questions",
+  "trivia_options",
+  "trivia_answers",
+  "trivia_question_translations",
+  "trivia_option_translations",
 ]);
 
 export const buildOrganizationResourceListUrl = (
@@ -332,11 +347,71 @@ export const buildOrganizationResourceListUrl = (
   }
 
   const params = new URLSearchParams();
-  params.append("filters[0][field]", filterField);
-  params.append("filters[0][operator]", "eq");
-  params.append("filters[0][value]", String(organizationId));
+  params.set("filters[0][field]", filterField);
+  params.set("filters[0][operator]", "eq");
+  params.set("filters[0][value]", String(organizationId));
+  params.set("organizationId", String(organizationId));
 
   return `${listPath}?${params.toString()}`;
+};
+
+export const buildOrganizationGroupUrl = (
+  groupName: string,
+  organizationId: string | number,
+  targetResource?: string
+): string | undefined => {
+  const groupDefinition = RESOURCE_GROUP_DEFINITION_MAP[groupName];
+
+  if (!groupDefinition) {
+    return undefined;
+  }
+
+  const fallbackResource = groupDefinition.sections[0]?.resource;
+  const resourceName = targetResource ?? fallbackResource;
+
+  if (!resourceName) {
+    return undefined;
+  }
+
+  const sectionDefinition = RESOURCE_DEFINITION_MAP[resourceName];
+  const filterField = resolveOrgFilterField(sectionDefinition);
+
+  if (!filterField) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams();
+  params.set("filters[0][field]", filterField);
+  params.set("filters[0][operator]", "eq");
+  params.set("filters[0][value]", String(organizationId));
+  params.set("organizationId", String(organizationId));
+  if (targetResource && targetResource !== fallbackResource) {
+    params.set("tab", targetResource);
+  } else if (!targetResource && fallbackResource) {
+    params.delete("tab");
+  }
+
+  if (
+    targetResource &&
+    TRIVIA_RESOURCE_NAMES.has(targetResource) &&
+    groupName === "organization"
+  ) {
+    params.set("view", "trivia");
+  } else {
+    params.delete("view");
+  }
+
+  return `${groupDefinition.route}?${params.toString()}`;
+};
+
+export const resolveResourceGroupForResource = (
+  resourceName: string | undefined
+): string | undefined => {
+  if (!resourceName) {
+    return undefined;
+  }
+
+  return RESOURCE_GROUP_NAME_BY_RESOURCE[resourceName];
 };
 
 

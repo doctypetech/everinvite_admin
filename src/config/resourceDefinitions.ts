@@ -632,6 +632,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "event_content_translations",
     label: "Content Translations",
+    orgFilterField: "event_content.organization_id",
     routes: {
       list: "/admin/event-content-translations",
       create: "/admin/event-content-translations/create",
@@ -675,7 +676,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "event_content_id, locale, title, event_content:event_content(id, title)",
+          "id, event_content_id, locale, title, event_content:event_content!inner(id, title, organization_id)",
       },
       columns: [
         {
@@ -762,7 +763,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "organization_id, full_name, status, attending_guests, organization:organizations(id, name)",
+          "id, organization_id, full_name, status, attending_guests, organization:organizations(id, name)",
       },
       columns: [
         {
@@ -831,7 +832,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "invitee_id, response, guests_count, submitted_at, invitee:invitees(id, full_name)",
+          "id, invitee_id, response, guests_count, submitted_at, invitee:invitees(id, full_name)",
       },
       columns: [
         {
@@ -1017,6 +1018,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "trivia_questions",
     label: "Trivia Questions",
+    orgFilterField: "organization_id",
     routes: {
       list: "/admin/trivia/questions",
       create: "/admin/trivia/questions/create",
@@ -1045,7 +1047,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "organization_id, question, created_at, organization:organizations(id, name)",
+          "id, organization_id, question, created_at, organization:organizations(id, name)",
       },
       columns: [
         {
@@ -1064,6 +1066,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "trivia_options",
     label: "Trivia Options",
+    orgFilterField: "question.organization_id",
     routes: {
       list: "/admin/trivia/options",
       create: "/admin/trivia/options/create",
@@ -1098,7 +1101,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "question_id, option_text, is_correct, question:trivia_questions(id, question)",
+          "id, question_id, option_text, is_correct, question:trivia_questions!inner(id, question, organization_id)",
       },
       columns: [
         {
@@ -1117,6 +1120,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "trivia_answers",
     label: "Trivia Answers",
+    orgFilterField: "organization_id",
     routes: {
       list: "/admin/trivia/answers",
       create: "/admin/trivia/answers/create",
@@ -1174,7 +1178,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "organization_id, respondent_name, question_id, option_id, invitee_id, created_at, organization:organizations(id, name), question:trivia_questions(id, question), option:trivia_options(id, option_text), invitee:invitees(id, full_name)",
+          "id, organization_id, respondent_name, question_id, option_id, invitee_id, created_at, organization:organizations(id, name), question:trivia_questions(id, question), option:trivia_options(id, option_text), invitee:invitees(id, full_name)",
       },
       columns: [
         {
@@ -1218,6 +1222,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "trivia_question_translations",
     label: "Trivia Question Translations",
+    orgFilterField: "questionRelation.organization_id",
     routes: {
       list: "/admin/trivia/question-translations",
       create: "/admin/trivia/question-translations/create",
@@ -1252,7 +1257,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "question_id, locale, question, questionRelation:trivia_questions(id, question)",
+          "id, question_id, locale, question, questionRelation:trivia_questions!inner(id, question, organization_id)",
       },
       columns: [
         {
@@ -1275,6 +1280,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
   {
     name: "trivia_option_translations",
     label: "Trivia Option Translations",
+    orgFilterField: "optionRelation.question.organization_id",
     routes: {
       list: "/admin/trivia/option-translations",
       create: "/admin/trivia/option-translations/create",
@@ -1309,7 +1315,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "option_id, locale, option_text, optionRelation:trivia_options(id, option_text)",
+          "id, option_id, locale, option_text, optionRelation:trivia_options!inner(id, option_text, question:trivia_questions!inner(id, organization_id))",
       },
       columns: [
         {

@@ -54,6 +54,17 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
       { resource: "organizations", title: "Organizations" },
       { resource: "organization_members", title: "Organization Members" },
       { resource: "org_aliases", title: "Organization Aliases" },
+      { resource: "trivia_questions", title: "Trivia Questions" },
+      { resource: "trivia_options", title: "Trivia Options" },
+      { resource: "trivia_answers", title: "Trivia Answers" },
+      {
+        resource: "trivia_question_translations",
+        title: "Question Translations",
+      },
+      {
+        resource: "trivia_option_translations",
+        title: "Option Translations",
+      },
     ],
   },
   {
@@ -95,25 +106,6 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     ],
   },
   {
-    name: "trivia",
-    label: "Trivia",
-    route: "/admin/trivia",
-    hidden: true,
-    sections: [
-      { resource: "trivia_questions", title: "Trivia Questions" },
-      { resource: "trivia_options", title: "Trivia Options" },
-      { resource: "trivia_answers", title: "Trivia Answers" },
-      {
-        resource: "trivia_question_translations",
-        title: "Question Translations",
-      },
-      {
-        resource: "trivia_option_translations",
-        title: "Option Translations",
-      },
-    ],
-  },
-  {
     name: "faq",
     label: "FAQ",
     route: "/admin/faq",
@@ -137,6 +129,17 @@ export const RESOURCE_GROUP_ROUTE_BY_RESOURCE: Record<string, string> =
     (acc, definition) => {
       definition.sections.forEach((section) => {
         acc[section.resource] = definition.route;
+      });
+      return acc;
+    },
+    {} as Record<string, string>
+  );
+
+export const RESOURCE_GROUP_NAME_BY_RESOURCE: Record<string, string> =
+  RESOURCE_GROUP_DEFINITIONS.reduce(
+    (acc, definition) => {
+      definition.sections.forEach((section) => {
+        acc[section.resource] = definition.name;
       });
       return acc;
     },
