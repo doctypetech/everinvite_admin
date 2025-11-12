@@ -9,6 +9,8 @@ export type FieldType =
   | "select"
   | "json"
   | "datetime"
+  | "date"
+  | "time"
   | "image"
   | "themeColors";
 
@@ -56,6 +58,7 @@ export interface FieldDefinition {
   min?: number;
   max?: number;
   step?: number;
+  dataPath?: string | (string | number)[];
 }
 
 export interface ColumnDefinition {
@@ -491,7 +494,13 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     form: {
       meta: {
         select:
-          "id, organization_id, title, body_html, cta, image_bucket, image_path, created_at, updated_at",
+          [
+            "id",
+            "organization_id",
+            "content",
+            "created_at",
+            "updated_at",
+          ].join(", "),
       },
       fields: [
         {
@@ -509,42 +518,70 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           key: "title",
           label: "Title",
           type: "text",
+          dataPath: "content.title",
+        },
+        {
+          key: "subtitle",
+          label: "Subtitle",
+          type: "text",
+          dataPath: "content.sub_title",
+        },
+        {
+          key: "event_date",
+          label: "Event Date",
+          type: "date",
+          dataPath: "content.event.date",
+        },
+        {
+          key: "event_time",
+          label: "Event Time",
+          type: "time",
+          dataPath: "content.event.time",
+        },
+        {
+          key: "location_place",
+          label: "Location",
+          type: "text",
+          dataPath: "content.location.name",
+        },
+        {
+          key: "location_map_url",
+          label: "Location Map URL",
+          type: "text",
+          helperText: "Must start with http:// or https://",
+          dataPath: "content.location.url",
+        },
+        {
+          key: "host_name",
+          label: "Host Name",
+          type: "text",
+          dataPath: "content.host_name",
         },
         {
           key: "body_html",
           label: "Body HTML",
           type: "textarea",
+          dataPath: "content.content",
         },
         {
           key: "cta",
           label: "CTA (JSON)",
           type: "json",
-        },
-        {
-          key: "image_path",
-          label: "Background Image",
-          type: "image",
-          helperText:
-            "Upload an image to associate with this piece of content. We store the Supabase storage path.",
-          storage: {
-            bucket: "organization_assets",
-            bucketField: "image_bucket",
-            organizationField: "organization_id",
-            recordIdField: "id",
-            includeOrganizationIdInPath: true,
-            includeRecordIdInPath: true,
-            accept: ["image/png", "image/jpeg", "image/webp"],
-            maxSizeMB: 5,
-            storePublicUrl: false,
-            cacheControlSeconds: "3600",
-          },
+          dataPath: "content.button",
         },
       ],
     },
     list: {
       meta: {
         select:
-          "id, organization_id, title, image_bucket, image_path, created_at, organization:organizations(id, name)",
+          [
+            "id",
+            "organization_id",
+            "content",
+            "created_at",
+            "updated_at",
+            "organization:organizations(id, name)",
+          ].join(", "),
       },
       columns: [
         {
@@ -555,8 +592,68 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             return data.organization?.name ?? data.organization_id ?? "—";
           },
         },
-        { key: "title", title: "Title", type: "text" },
+        {
+          key: "title",
+          title: "Title",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            return content?.title ?? "—";
+          },
+        },
+        {
+          key: "subtitle",
+          title: "Subtitle",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            return content?.sub_title ?? "—";
+          },
+        },
+        {
+          key: "event_date",
+          title: "Event Date",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            const event = content?.event as Record<string, any> | undefined;
+            return event?.date ?? "—";
+          },
+        },
+        {
+          key: "event_time",
+          title: "Event Time",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            const event = content?.event as Record<string, any> | undefined;
+            return event?.time ?? "—";
+          },
+        },
+        {
+          key: "location_place",
+          title: "Location",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            const location = content?.location as Record<string, any> | undefined;
+            return location?.name ?? "—";
+          },
+        },
+        {
+          key: "host_name",
+          title: "Host",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            return content?.host_name ?? "—";
+          },
+        },
         { key: "created_at", title: "Created", type: "datetime" },
+        { key: "updated_at", title: "Updated", type: "datetime" },
+      ],
+      initialSorters: [
+        { field: "created_at", order: "desc" },
       ],
     },
   },
@@ -680,6 +777,17 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
       edit: "/admin/organization-content-translations/edit/:id",
     },
     form: {
+      meta: {
+        select:
+          [
+            "id",
+            "organization_content_id",
+            "locale",
+            "content",
+            "created_at",
+            "updated_at",
+          ].join(", "),
+      },
       fields: [
         {
           key: "organization_content_id",
@@ -687,7 +795,19 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           type: "select",
           relation: {
             resource: "organization_content",
-            optionLabel: "title",
+            optionLabel: (item: Record<string, any>) => {
+              const content = item.content as Record<string, any> | undefined;
+              const title = content?.title ?? content?.sub_title;
+              const id = item.id;
+              if (title && typeof title === "string" && title.trim().length) {
+                return title;
+              }
+              return `Content #${id ?? "—"}`;
+            },
+            optionValue: "id",
+            meta: {
+              select: "id, content",
+            },
           },
           required: true,
         },
@@ -701,23 +821,52 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           key: "title",
           label: "Title",
           type: "text",
+          dataPath: "content.title",
+        },
+        {
+          key: "subtitle",
+          label: "Subtitle",
+          type: "text",
+          dataPath: "content.sub_title",
+        },
+        {
+          key: "location_place",
+          label: "Location",
+          type: "text",
+          dataPath: "content.location.name",
+        },
+        {
+          key: "host_name",
+          label: "Host Name",
+          type: "text",
+          dataPath: "content.host_name",
         },
         {
           key: "body_html",
           label: "Body HTML",
           type: "textarea",
+          dataPath: "content.content",
         },
         {
           key: "cta",
           label: "CTA (JSON)",
           type: "json",
+          dataPath: "content.button",
         },
       ],
     },
     list: {
       meta: {
         select:
-          "id, organization_content_id, locale, title, organization_content:organization_content!inner(id, title, organization_id)",
+          [
+            "id",
+            "organization_content_id",
+            "locale",
+            "content",
+            "created_at",
+            "updated_at",
+            "organization_content:organization_content!inner(id, content, organization_id)",
+          ].join(", "),
       },
       columns: [
         {
@@ -726,14 +875,54 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           render: (_, record) => {
             const data = record as Record<string, any>;
             return (
-              data.organization_content?.title ??
+              data.organization_content?.content?.title ??
+              data.organization_content?.content?.sub_title ??
               data.organization_content_id ??
               "—"
             );
           },
         },
         { key: "locale", title: "Locale", type: "text" },
-        { key: "title", title: "Title", type: "text" },
+        {
+          key: "title",
+          title: "Title",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            return content?.title ?? "—";
+          },
+        },
+        {
+          key: "location_place",
+          title: "Location",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            const location = content?.location as Record<string, any> | undefined;
+            return location?.name ?? "—";
+          },
+        },
+        {
+          key: "subtitle",
+          title: "Subtitle",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            return content?.sub_title ?? "—";
+          },
+        },
+        {
+          key: "host_name",
+          title: "Host",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            const content = data.content as Record<string, any> | undefined;
+            return content?.host_name ?? "—";
+          },
+        },
+      ],
+      initialSorters: [
+        { field: "created_at", order: "desc" },
       ],
     },
   },

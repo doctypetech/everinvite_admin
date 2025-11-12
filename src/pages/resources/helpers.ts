@@ -13,6 +13,98 @@ import {
 const isRecord = (value: unknown): value is Record<string, any> =>
   typeof value === "object" && value !== null;
 
+const toPathSegments = (
+  path: string | (string | number)[]
+): (string | number)[] => {
+  if (Array.isArray(path)) {
+    return path;
+  }
+
+  if (typeof path !== "string") {
+    return [];
+  }
+
+  return path
+    .split(".")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+};
+
+const getValueAtPath = (
+  source: unknown,
+  path: string | (string | number)[] | undefined
+): unknown => {
+  if (path === undefined) {
+    return undefined;
+  }
+
+  const segments = toPathSegments(path);
+
+  if (!segments.length) {
+    return undefined;
+  }
+
+  let current: unknown = source;
+
+  for (const segment of segments) {
+    if (
+      (!isRecord(current) && !Array.isArray(current)) ||
+      current === null ||
+      current === undefined
+    ) {
+      return undefined;
+    }
+
+    current = (current as any)[segment as any];
+
+    if (current === undefined) {
+      return undefined;
+    }
+  }
+
+  return current;
+};
+
+const setValueAtPath = (
+  target: Record<string, unknown>,
+  path: string | (string | number)[],
+  value: unknown
+): void => {
+  const segments = toPathSegments(path);
+
+  if (!segments.length) {
+    return;
+  }
+
+  let current: any = target;
+
+  segments.forEach((segment, index) => {
+    const isLast = index === segments.length - 1;
+
+    if (isLast) {
+      current[segment as any] = value;
+      return;
+    }
+
+    const nextSegment = segments[index + 1];
+    const existing = current[segment as any];
+
+    if (
+      isRecord(existing) ||
+      Array.isArray(existing)
+    ) {
+      current = existing;
+      return;
+    }
+
+    const container =
+      typeof nextSegment === "number" ? [] : {};
+
+    current[segment as any] = container;
+    current = container;
+  });
+};
+
 export const formatCellValue = (
   value: unknown,
   type: FieldType | undefined
@@ -26,6 +118,21 @@ export const formatCellValue = (
       return dayjs(value as any).isValid()
         ? dayjs(value as any).format("YYYY-MM-DD HH:mm")
         : String(value);
+    case "date":
+      return dayjs(value as any).isValid()
+        ? dayjs(value as any).format("YYYY-MM-DD")
+        : String(value);
+    case "time": {
+      const asDayjs = dayjs(value as any);
+      if (asDayjs.isValid()) {
+        return asDayjs.format("HH:mm");
+      }
+      if (typeof value === "string") {
+        const normalized = dayjs(`1970-01-01T${value}`);
+        return normalized.isValid() ? normalized.format("HH:mm") : value;
+      }
+      return String(value);
+    }
     case "boolean":
       return Boolean(value) ? "Yes" : "No";
     case "json":
@@ -58,27 +165,62 @@ export const convertInitialValues = (
   const clone: Record<string, unknown> = { ...values };
 
   fields.forEach((field) => {
-    const value = clone[field.key];
+    const formKey = field.key;
+    const targetPath = field.dataPath ?? field.key;
+    const extracted = getValueAtPath(values, targetPath);
+
+    if (extracted !== undefined) {
+      clone[formKey] = extracted;
+    }
+
+    const value = clone[formKey];
 
     if (value === undefined || value === null) {
       if (field.defaultValue !== undefined) {
-        clone[field.key] = field.defaultValue;
+        clone[formKey] = field.defaultValue;
       }
       return;
     }
 
     switch (field.type) {
       case "datetime":
-        clone[field.key] = dayjs(value as any);
+        clone[formKey] = dayjs(value as any);
         break;
+      case "date": {
+        const parsed = dayjs(value as any);
+        clone[formKey] = parsed.isValid() ? parsed : value;
+        break;
+      }
+      case "time": {
+        if (dayjs.isDayjs(value)) {
+          clone[formKey] = value;
+          break;
+        }
+
+        const parsed = dayjs(value as any);
+
+        if (parsed.isValid()) {
+          clone[formKey] = parsed;
+          break;
+        }
+
+        if (typeof value === "string") {
+          const normalized = dayjs(`1970-01-01T${value}`);
+          clone[formKey] = normalized.isValid() ? normalized : value;
+          break;
+        }
+
+        clone[formKey] = value;
+        break;
+      }
       case "json":
         try {
-          clone[field.key] =
+          clone[formKey] =
             typeof value === "string"
               ? value
               : JSON.stringify(value, null, 2);
         } catch {
-          clone[field.key] = String(value);
+          clone[formKey] = String(value);
         }
         break;
       case "themeColors": {
@@ -142,7 +284,7 @@ export const convertInitialValues = (
           ),
         };
 
-        clone[field.key] = {
+        clone[formKey] = {
           ...configValue,
           theme: {
             ...(defaultTheme ?? {}),
@@ -170,24 +312,36 @@ export const serializeFormValues = (
   const output: Record<string, unknown> = { ...values };
 
   fields.forEach((field) => {
-    const rawValue = output[field.key];
+    const formKey = field.key;
+    const targetPath = field.dataPath ?? field.key;
 
-    if (rawValue === undefined) {
+    if (!Object.prototype.hasOwnProperty.call(output, formKey)) {
       return;
     }
+
+    const rawValue = output[formKey];
+
+    if (rawValue === undefined) {
+      if (targetPath !== formKey) {
+        delete output[formKey];
+      }
+      return;
+    }
+
+    let preparedValue: unknown = rawValue;
 
     switch (field.type) {
       case "number": {
         if (rawValue === "" || rawValue === null) {
-          output[field.key] = null;
+          preparedValue = null;
         } else {
           const parsed = Number(rawValue);
-          output[field.key] = Number.isNaN(parsed) ? null : parsed;
+          preparedValue = Number.isNaN(parsed) ? null : parsed;
         }
         break;
       }
       case "boolean": {
-        output[field.key] = Boolean(rawValue);
+        preparedValue = Boolean(rawValue);
         break;
       }
       case "json": {
@@ -195,12 +349,12 @@ export const serializeFormValues = (
           typeof rawValue === "string" ? rawValue.trim() : String(rawValue);
 
         if (!stringValue.length) {
-          output[field.key] = null;
+          preparedValue = null;
           break;
         }
 
         try {
-          output[field.key] =
+          preparedValue =
             typeof rawValue === "string" ? JSON.parse(rawValue) : rawValue;
         } catch (error) {
           throw new Error(
@@ -211,12 +365,58 @@ export const serializeFormValues = (
       }
       case "datetime": {
         if (!rawValue) {
-          output[field.key] = null;
+          preparedValue = null;
         } else if (dayjs.isDayjs(rawValue)) {
-          output[field.key] = rawValue.toISOString();
+          preparedValue = rawValue.toISOString();
         } else {
-          output[field.key] = dayjs(rawValue as any).toISOString();
+          preparedValue = dayjs(rawValue as any).toISOString();
         }
+        break;
+      }
+      case "date": {
+        if (!rawValue) {
+          preparedValue = null;
+          break;
+        }
+
+        if (dayjs.isDayjs(rawValue)) {
+          preparedValue = rawValue.format("YYYY-MM-DD");
+          break;
+        }
+
+        const parsed = dayjs(rawValue as any);
+        preparedValue = parsed.isValid()
+          ? parsed.format("YYYY-MM-DD")
+          : rawValue;
+        break;
+      }
+      case "time": {
+        if (!rawValue) {
+          preparedValue = null;
+          break;
+        }
+
+        if (dayjs.isDayjs(rawValue)) {
+          preparedValue = rawValue.format("HH:mm:ss");
+          break;
+        }
+
+        const stringValue =
+          typeof rawValue === "string" ? rawValue.trim() : String(rawValue);
+
+        if (!stringValue.length) {
+          preparedValue = null;
+          break;
+        }
+
+        const parsed =
+          typeof rawValue === "string"
+            ? dayjs(`1970-01-01T${stringValue}`)
+            : dayjs(rawValue as any);
+
+        preparedValue = parsed.isValid()
+          ? parsed.format("HH:mm:ss")
+          : stringValue;
         break;
       }
       case "themeColors": {
@@ -269,7 +469,7 @@ export const serializeFormValues = (
           },
         };
 
-        output[field.key] = {
+        preparedValue = {
           ...value,
           theme: normalizedTheme,
         };
@@ -277,15 +477,21 @@ export const serializeFormValues = (
       }
       case "image": {
         if (rawValue === undefined || rawValue === null || rawValue === "") {
-          output[field.key] = null;
+          preparedValue = null;
         } else {
-          output[field.key] = rawValue;
+          preparedValue = rawValue;
         }
         break;
       }
       default:
         break;
     }
+
+    if (targetPath !== formKey) {
+      delete output[formKey];
+    }
+
+    setValueAtPath(output, targetPath, preparedValue);
   });
 
   return output;
