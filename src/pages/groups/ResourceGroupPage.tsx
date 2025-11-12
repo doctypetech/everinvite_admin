@@ -121,15 +121,16 @@ export const ResourceGroupPage: React.FC<ResourceGroupPageProps> = ({
               const params = new URLSearchParams(location.search);
               params.delete("view");
               params.delete("tab");
-              const organizationId =
-                searchParams.get("organizationId") ??
-                searchParams.get("filters[0][value]");
-              if (organizationId) {
-                params.set("organizationId", organizationId);
-              }
+              Array.from(params.keys()).forEach((key) => {
+                if (key.startsWith("filters[")) {
+                  params.delete(key);
+                }
+              });
+              params.delete("organizationId");
+              const searchString = params.toString();
               navigate({
                 pathname: "/admin/organization",
-                search: params.toString(),
+                search: searchString ? `?${searchString}` : "",
               });
             }}
           >
