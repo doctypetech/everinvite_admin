@@ -16,6 +16,7 @@ import type { FieldDefinition } from "../../config/resourceDefinitions";
 import React from "react";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { RichTextEditor } from "../../components/RichTextEditor";
+import { AVAILABLE_LOCALES } from "../../config/locales";
 
 type Mode = "create" | "edit";
 
@@ -57,6 +58,8 @@ const getFieldPlaceholder = (field: FieldDefinition) => {
       return `Select ${normalizedLabel}`;
     case "select":
       return `Select ${normalizedLabel}`;
+    case "locale":
+      return "Select locale";
     default:
       return undefined;
   }
@@ -291,6 +294,35 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
   }
 
   const isTextArea = field.type === "textarea" || field.type === "json";
+  if (field.type === "locale") {
+    return (
+      <Form.Item
+        key={field.key}
+        name={field.key}
+        label={field.label}
+        rules={rules}
+        tooltip={field.helperText}
+      >
+        <Select
+          disabled={isDisabled}
+          allowClear={!field.required && !isLocked}
+          showSearch
+          options={AVAILABLE_LOCALES}
+          optionFilterProp="label"
+          filterOption={(input, option) => {
+            const label = String(option?.label ?? "");
+            const value = String(option?.value ?? "");
+            const normalizedInput = input.trim().toLowerCase();
+            return (
+              label.toLowerCase().includes(normalizedInput) ||
+              value.toLowerCase().includes(normalizedInput)
+            );
+          }}
+          placeholder={placeholder ?? "Select locale"}
+        />
+      </Form.Item>
+    );
+  }
   if (field.type === "primaryButton") {
     const textRules =
       field.required

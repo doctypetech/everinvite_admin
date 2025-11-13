@@ -6,6 +6,7 @@ export type FieldType =
   | "textarea"
   | "richtext"
   | "primaryButton"
+  | "locale"
   | "number"
   | "boolean"
   | "select"
@@ -686,7 +687,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "locale",
           label: "Locale",
-          type: "text",
+          type: "locale",
           required: true,
         },
         {
@@ -714,6 +715,10 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         { key: "name", title: "Name", type: "text" },
       ],
     },
+    getRecordId: (record) => {
+      const data = record as Record<string, any>;
+      return `${data.event_id ?? ""}:${data.locale ?? ""}`;
+    },
   },
   {
     name: "template_translations",
@@ -738,7 +743,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "locale",
           label: "Locale",
-          type: "text",
+          type: "locale",
           required: true,
         },
         {
@@ -771,6 +776,10 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         { key: "locale", title: "Locale", type: "text" },
         { key: "name", title: "Name", type: "text" },
       ],
+    },
+    getRecordId: (record) => {
+      const data = record as Record<string, any>;
+      return `${data.template_id ?? ""}:${data.locale ?? ""}`;
     },
   },
   {
@@ -820,7 +829,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "locale",
           label: "Locale",
-          type: "text",
+          type: "locale",
           required: true,
         },
         {
@@ -1490,7 +1499,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "locale",
           label: "Locale",
-          type: "text",
+          type: "locale",
           required: true,
         },
         {
@@ -1548,7 +1557,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "locale",
           label: "Locale",
-          type: "text",
+          type: "locale",
           required: true,
         },
         {
@@ -1643,7 +1652,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "locale",
           label: "Locale",
-          type: "text",
+          type: "locale",
           required: true,
         },
         {
@@ -1676,6 +1685,10 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         { key: "locale", title: "Locale", type: "text" },
         { key: "question", title: "Question", type: "text" },
       ],
+    },
+    getRecordId: (record) => {
+      const data = record as Record<string, any>;
+      return `${data.faq_id ?? ""}:${data.locale ?? ""}`;
     },
   },
 ];
