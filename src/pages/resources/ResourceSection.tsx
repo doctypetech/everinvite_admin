@@ -5,18 +5,12 @@ import {
   List,
   useTable,
 } from "@refinedev/antd";
-import {
-  Alert,
-  Button,
-  Result,
-  Space,
-  Table,
-  Tooltip,
-} from "antd";
+import { Alert, Button, Result, Space, Table, Tooltip } from "antd";
 import {
   FileTextOutlined,
   UsergroupAddOutlined,
   BulbOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import { useMemo, type ReactNode } from "react";
 import { useNavigate } from "react-router";
@@ -28,6 +22,8 @@ import {
 import {
   formatCellValue,
   ORGANIZATION_RELATED_RESOURCES,
+  buildTranslationResourceListUrl,
+  getTranslationLinkConfig,
   buildOrganizationResourceListUrl,
   buildOrganizationGroupUrl,
   resolveResourceGroupForResource,
@@ -45,6 +41,8 @@ const ORGANIZATION_ACTION_ICON_MAP: Record<string, ReactNode> = {
   organization_content: <FileTextOutlined />,
   trivia_questions: <BulbOutlined />,
 };
+
+const TRANSLATION_ACTION_ICON = <GlobalOutlined />;
 
 export type ResourceSectionProps = {
   resourceName: string;
@@ -243,6 +241,33 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
                       </Tooltip>
                     );
                   })}
+                {(() => {
+                  const translationConfig =
+                    getTranslationLinkConfig(resourceName);
+                  if (!translationConfig) {
+                    return null;
+                  }
+
+                  const to = buildTranslationResourceListUrl(
+                    resourceName,
+                    recordId,
+                  );
+
+                  if (!to) {
+                    return null;
+                  }
+
+                  return (
+                    <Tooltip title={translationConfig.label} key="translations">
+                      <Button
+                        size="small"
+                        icon={TRANSLATION_ACTION_ICON}
+                        aria-label={translationConfig.label}
+                        onClick={() => navigate(to)}
+                      />
+                    </Tooltip>
+                  );
+                })()}
                 <EditButton
                   size="small"
                   hideText

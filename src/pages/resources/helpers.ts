@@ -89,16 +89,12 @@ const setValueAtPath = (
     const nextSegment = segments[index + 1];
     const existing = current[segment as any];
 
-    if (
-      isRecord(existing) ||
-      Array.isArray(existing)
-    ) {
+    if (isRecord(existing) || Array.isArray(existing)) {
       current = existing;
       return;
     }
 
-    const container =
-      typeof nextSegment === "number" ? [] : {};
+    const container = typeof nextSegment === "number" ? [] : {};
 
     current[segment as any] = container;
     current = container;
@@ -146,9 +142,7 @@ export const formatCellValue = (
         return String(value);
       }
     case "image":
-      return typeof value === "string" && value.trim().length > 0
-        ? value
-        : "-";
+      return typeof value === "string" && value.trim().length > 0 ? value : "-";
     default:
       return String(value);
   }
@@ -216,9 +210,7 @@ export const convertInitialValues = (
       case "json":
         try {
           clone[formKey] =
-            typeof value === "string"
-              ? value
-              : JSON.stringify(value, null, 2);
+            typeof value === "string" ? value : JSON.stringify(value, null, 2);
         } catch {
           clone[formKey] = String(value);
         }
@@ -547,6 +539,186 @@ export const TRIVIA_RESOURCE_NAMES = new Set<string>([
   "trivia_option_translations",
 ]);
 
+type TranslationRelatedResource = {
+  resource: string;
+  label: string;
+};
+
+type TranslationLinkConfig = TranslationRelatedResource & {
+  sourceResource: string;
+  foreignKey: string;
+  sourceIdField: string;
+};
+
+export const TRANSLATION_RELATED_RESOURCES: TranslationRelatedResource[] = [
+  { resource: "event_translations", label: "Event Translations" },
+  { resource: "template_translations", label: "Template Translations" },
+  {
+    resource: "organization_content_translations",
+    label: "Content Translations",
+  },
+  {
+    resource: "trivia_question_translations",
+    label: "Trivia Question Translations",
+  },
+  {
+    resource: "trivia_option_translations",
+    label: "Trivia Option Translations",
+  },
+  { resource: "faq_translations", label: "FAQ Translations" },
+];
+
+const TRANSLATION_LINK_CONFIGS: TranslationLinkConfig[] = [
+  {
+    sourceResource: "events",
+    resource: "event_translations",
+    label: "Event Translations",
+    foreignKey: "event_id",
+    sourceIdField: "id",
+  },
+  {
+    sourceResource: "templates",
+    resource: "template_translations",
+    label: "Template Translations",
+    foreignKey: "template_id",
+    sourceIdField: "id",
+  },
+  {
+    sourceResource: "organization_content",
+    resource: "organization_content_translations",
+    label: "Content Translations",
+    foreignKey: "organization_content_id",
+    sourceIdField: "id",
+  },
+  {
+    sourceResource: "trivia_questions",
+    resource: "trivia_question_translations",
+    label: "Trivia Question Translations",
+    foreignKey: "question_id",
+    sourceIdField: "id",
+  },
+  {
+    sourceResource: "trivia_options",
+    resource: "trivia_option_translations",
+    label: "Trivia Option Translations",
+    foreignKey: "option_id",
+    sourceIdField: "id",
+  },
+  {
+    sourceResource: "faq",
+    resource: "faq_translations",
+    label: "FAQ Translations",
+    foreignKey: "faq_id",
+    sourceIdField: "id",
+  },
+];
+
+export const TRANSLATION_SOURCE_RESOURCE_SET = new Set(
+  TRANSLATION_LINK_CONFIGS.map(({ sourceResource }) => sourceResource)
+);
+
+const TRANSLATION_LINK_CONFIG_BY_SOURCE = TRANSLATION_LINK_CONFIGS.reduce<
+  Record<string, TranslationLinkConfig>
+>((acc, config) => {
+  acc[config.sourceResource] = config;
+  return acc;
+}, {});
+
+export const getTranslationLinkConfig = (
+  sourceResource: string | undefined
+) => {
+  if (!sourceResource) {
+    return undefined;
+  }
+  return TRANSLATION_LINK_CONFIG_BY_SOURCE[sourceResource];
+};
+
+const TRANSLATION_LINK_CONFIG_BY_TRANSLATION = TRANSLATION_LINK_CONFIGS.reduce<
+  Record<string, TranslationLinkConfig>
+>((acc, config) => {
+  acc[config.resource] = config;
+  return acc;
+}, {});
+
+export const TRANSLATION_RESOURCE_SET = new Set(
+  TRANSLATION_LINK_CONFIGS.map(({ resource }) => resource)
+);
+
+export const getTranslationConfigForResource = (
+  translationResource: string | undefined
+) => {
+  if (!translationResource) {
+    return undefined;
+  }
+  return TRANSLATION_LINK_CONFIG_BY_TRANSLATION[translationResource];
+};
+
+export const buildTranslationResourceListUrl = (
+  sourceResource: string,
+  recordId: string | number
+): string | undefined => {
+  const config = getTranslationLinkConfig(sourceResource);
+
+  if (!config) {
+    return undefined;
+  }
+
+  const translationDefinition = RESOURCE_DEFINITION_MAP[config.resource];
+
+  if (!translationDefinition?.routes?.list) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams();
+  params.set("filters[0][field]", config.foreignKey);
+  params.set("filters[0][operator]", "eq");
+  params.set("filters[0][value]", String(recordId));
+
+  const search = params.toString();
+  return search.length
+    ? `${translationDefinition.routes.list}?${search}`
+    : translationDefinition.routes.list;
+};
+
+export const buildBaseResourceListUrlFromTranslation = (
+  translationResource: string,
+  recordId: string | number
+): string | undefined => {
+  const config = getTranslationConfigForResource(translationResource);
+
+  if (!config) {
+    return undefined;
+  }
+
+  const baseDefinition = RESOURCE_DEFINITION_MAP[config.sourceResource];
+  const listPath = baseDefinition?.routes.list;
+
+  if (!listPath) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams();
+  params.set("filters[0][field]", config.sourceIdField);
+  params.set("filters[0][operator]", "eq");
+  params.set("filters[0][value]", String(recordId));
+
+  return `${listPath}?${params.toString()}`;
+};
+
+export const buildResourceEditUrl = (
+  resourceName: string,
+  recordId: string | number
+): string | undefined => {
+  const definition = RESOURCE_DEFINITION_MAP[resourceName];
+  const editPath = definition?.routes.edit;
+
+  if (!editPath) {
+    return undefined;
+  }
+
+  return editPath.replace(":id", encodeURIComponent(String(recordId)));
+};
+
 export const buildOrganizationResourceListUrl = (
   resourceName: string,
   organizationId: string | number
@@ -628,5 +800,3 @@ export const resolveResourceGroupForResource = (
 
   return RESOURCE_GROUP_NAME_BY_RESOURCE[resourceName];
 };
-
-

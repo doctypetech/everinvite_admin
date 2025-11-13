@@ -1,6 +1,15 @@
 import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
-import { Alert, Button, Result, Space, Table, Tabs, Tooltip } from "antd";
+import {
+  Alert,
+  Button,
+  Result,
+  Space,
+  Table,
+  Tabs,
+  Tooltip,
+  Typography,
+} from "antd";
 import {
   ArrowLeftOutlined,
   FileTextOutlined,
@@ -17,6 +26,9 @@ import {
   formatCellValue,
   ORGANIZATION_RELATED_RESOURCE_NAMES,
   ORGANIZATION_RELATED_RESOURCES,
+  TRANSLATION_RESOURCE_SET,
+  buildBaseResourceListUrlFromTranslation,
+  getTranslationConfigForResource,
   buildOrganizationResourceListUrl,
   resolveOrgFilterField,
   buildOrganizationGroupUrl,
@@ -26,6 +38,7 @@ import {
 import {
   RESOURCE_GROUP_DEFINITION_MAP,
   RESOURCE_GROUP_NAME_BY_RESOURCE,
+  RESOURCE_GROUP_ROUTE_BY_RESOURCE,
 } from "../../config/resourceGroups";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
@@ -46,8 +59,7 @@ type GroupNavigationTab = {
 
 export const GenericList: React.FC = () => {
   const { resource } = useParsed();
-  const resourceName =
-    typeof resource === "string" ? resource : resource?.name;
+  const resourceName = typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,23 +81,30 @@ export const GenericList: React.FC = () => {
   const currentFilterValue = searchParams.get("filters[0][value]");
   const organizationIdParam =
     searchParams.get("organizationId") ?? currentFilterValue ?? undefined;
+  const translationConfig = definition
+    ? getTranslationConfigForResource(definition.name)
+    : undefined;
 
   const filteredGroupSections = useMemo(() => {
     if (!groupDefinition) {
       return [];
     }
+
+    const nonTranslationSections = groupDefinition.sections.filter(
+      (section) => !TRANSLATION_RESOURCE_SET.has(section.resource)
+    );
+
     if (viewMode === "trivia") {
-      return groupDefinition.sections.filter((section) =>
+      return nonTranslationSections.filter((section) =>
         TRIVIA_RESOURCE_NAMES.has(section.resource)
       );
     }
-    return groupDefinition.sections.filter(
+    return nonTranslationSections.filter(
       (section) => !TRIVIA_RESOURCE_NAMES.has(section.resource)
     );
   }, [groupDefinition, viewMode]);
 
-  const showGroupTabs =
-    filteredGroupSections.length > 1;
+  const showGroupTabs = !translationConfig && filteredGroupSections.length > 1;
 
   const groupNavigationTabs = useMemo<GroupNavigationTab[]>(() => {
     if (!showGroupTabs || !groupDefinition) {
@@ -119,6 +138,56 @@ export const GenericList: React.FC = () => {
       definition?.getRecordId ??
       ((record: Record<string, any>) => String(record.id)),
     [definition?.getRecordId]
+  );
+
+  const baseResourceDefinition = translationConfig
+    ? RESOURCE_DEFINITION_MAP[translationConfig.sourceResource]
+    : undefined;
+  const groupRouteForSource = translationConfig
+    ? RESOURCE_GROUP_ROUTE_BY_RESOURCE[translationConfig.sourceResource]
+    : undefined;
+  const baseRecordId = currentFilterValue ?? undefined;
+
+  let translationBackUrl: string | undefined;
+  if (translationConfig) {
+    if (groupRouteForSource) {
+      const params = new URLSearchParams();
+      params.set("tab", translationConfig.sourceResource);
+      if (organizationIdParam) {
+        params.set("organizationId", organizationIdParam);
+      }
+      const search = params.toString();
+      translationBackUrl = search.length
+        ? `${groupRouteForSource}?${search}`
+        : groupRouteForSource;
+    } else if (baseRecordId) {
+      translationBackUrl = buildBaseResourceListUrlFromTranslation(
+        definition?.name ?? "",
+        baseRecordId
+      );
+    }
+    if (!translationBackUrl) {
+      translationBackUrl = baseResourceDefinition?.routes.list;
+    }
+  }
+
+  const translationBackLabel =
+    translationConfig && baseResourceDefinition
+      ? baseResourceDefinition.label
+      : translationConfig?.label;
+
+  const listTitle = translationConfig ? (
+    <div>
+      <Typography.Title level={2} style={{ marginBottom: 4 }}>
+        {translationConfig.label}
+      </Typography.Title>
+      <Typography.Text type="secondary">
+        Manage translations for{" "}
+        {baseResourceDefinition?.label ?? "this resource"}.
+      </Typography.Text>
+    </div>
+  ) : (
+    definition.label
   );
 
   const { tableProps, tableQuery } = useTable({
@@ -157,7 +226,10 @@ export const GenericList: React.FC = () => {
       <Result
         status="error"
         title="Failed to load data"
-        subTitle={tableQuery.error?.message ?? "An unexpected error occurred while loading this resource."}
+        subTitle={
+          tableQuery.error?.message ??
+          "An unexpected error occurred while loading this resource."
+        }
         extra={
           <Button type="primary" onClick={() => tableQuery.refetch()}>
             Retry
@@ -169,7 +241,7 @@ export const GenericList: React.FC = () => {
 
   return (
     <List
-      title={definition.label}
+      title={listTitle}
       resource={definition.name}
       headerButtons={({ defaultButtons }) => (
         <Space wrap>
@@ -179,6 +251,14 @@ export const GenericList: React.FC = () => {
               onClick={() => navigate("/admin/organization")}
             >
               Back to Organizations
+            </Button>
+          )}
+          {translationConfig && translationBackUrl && translationBackLabel && (
+            <Button
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(translationBackUrl!)}
+            >
+              Back to {translationBackLabel}
             </Button>
           )}
           {defaultButtons}
@@ -318,5 +398,3 @@ export const GenericList: React.FC = () => {
     </List>
   );
 };
-
-

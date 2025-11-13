@@ -6,7 +6,7 @@ import {
   Input,
   Typography,
   Alert,
-  Space,
+  theme,
 } from "antd";
 import { useState } from "react";
 
@@ -19,6 +19,7 @@ export const LoginPage = () => {
   const { mutateAsync: login } = useLogin<LoginFormValues>();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { token } = theme.useToken();
 
   const handleSubmit = async (values: LoginFormValues) => {
     setError(null);
@@ -47,10 +48,19 @@ export const LoginPage = () => {
         alignItems: "center",
         justifyContent: "center",
         padding: "24px",
+        background: `radial-gradient(circle at top, ${token.colorBgElevated} 0%, ${token.colorBgLayout} 60%, ${token.colorBgContainer} 100%)`,
+        transition: "background 0.3s ease",
       }}
     >
-      <Card style={{ width: 360, boxShadow: "0 12px 40px rgba(0, 0, 0, 0.08)" }}>
-        <Typography.Title level={4} style={{ textAlign: "center" }}>
+      <Card
+        style={{
+          width: 360,
+          boxShadow: token.boxShadowSecondary,
+          borderRadius: token.borderRadiusLG,
+          background: token.colorBgContainer,
+        }}
+      >
+        <Typography.Title level={4} style={{ textAlign: "center", color: token.colorText }}>
           Admin Login
         </Typography.Title>
 

@@ -14,11 +14,12 @@ import routerProvider, {
   DocumentTitleHandler,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
-import { App as AntdApp } from "antd";
+import { App as AntdApp, theme } from "antd";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
 import {
   Fragment,
   useMemo,
+  useEffect,
   type ReactNode,
   type FC,
 } from "react";
@@ -138,6 +139,21 @@ const LIST_COMPONENT_OVERRIDES: Record<string, FC> = {
 };
 
 function App() {
+  const { token } = theme.useToken();
+
+  useEffect(() => {
+    const { style } = document.body;
+    style.background = token.colorBgLayout;
+    style.color = token.colorText;
+    style.margin = "0";
+    document.documentElement.style.background = token.colorBgLayout;
+
+    return () => {
+      style.background = "";
+      style.color = "";
+    };
+  }, [token.colorBgLayout, token.colorText]);
+
   const refineResources = useMemo(
     () => [
       ...RESOURCE_GROUP_DEFINITIONS.map(mapGroupToRefine),
