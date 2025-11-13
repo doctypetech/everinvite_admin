@@ -15,6 +15,7 @@ import type { FieldDefinition } from "../../config/resourceDefinitions";
 
 import React from "react";
 import { InfoCircleOutlined } from "@ant-design/icons";
+import { RichTextEditor } from "../../components/RichTextEditor";
 
 type Mode = "create" | "edit";
 
@@ -44,6 +45,7 @@ const getFieldPlaceholder = (field: FieldDefinition) => {
       return 'Enter JSON, e.g. {"key": "value"}';
     case "textarea":
     case "text":
+    case "richtext":
       return `Enter ${normalizedLabel}`;
     case "number":
       return `Enter ${normalizedLabel}`;
@@ -289,6 +291,19 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
   }
 
   const isTextArea = field.type === "textarea" || field.type === "json";
+  if (field.type === "richtext") {
+    return (
+      <Form.Item
+        key={field.key}
+        name={field.key}
+        label={field.label}
+        rules={rules}
+        tooltip={field.helperText}
+      >
+        <RichTextEditor disabled={isDisabled} />
+      </Form.Item>
+    );
+  }
 
   return (
     <Form.Item

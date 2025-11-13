@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 export type FieldType =
   | "text"
   | "textarea"
+  | "richtext"
   | "number"
   | "boolean"
   | "select"
@@ -560,7 +561,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "body_html",
           label: "Body HTML",
-          type: "textarea",
+          type: "richtext",
           dataPath: "content.content",
         },
         {
@@ -844,7 +845,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         {
           key: "body_html",
           label: "Body HTML",
-          type: "textarea",
+          type: "richtext",
           dataPath: "content.content",
         },
         {
