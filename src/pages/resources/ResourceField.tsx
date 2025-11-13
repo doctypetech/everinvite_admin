@@ -291,6 +291,74 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
   }
 
   const isTextArea = field.type === "textarea" || field.type === "json";
+  if (field.type === "primaryButton") {
+    const textRules =
+      field.required
+        ? [
+            {
+              required: true,
+              message: "Button text is required",
+            },
+          ]
+        : undefined;
+    const linkRules = [
+      ...(field.required
+        ? [
+            {
+              required: true,
+              message: "Button link is required",
+            },
+          ]
+        : []),
+      {
+        validator: (_: unknown, value: unknown) => {
+          if (!value || typeof value !== "string" || value.trim().length === 0) {
+            return Promise.resolve();
+          }
+          try {
+            // eslint-disable-next-line no-new
+            new URL(value);
+            return Promise.resolve();
+          } catch {
+            return Promise.reject(
+              new Error("Enter a valid URL (https://example.com)"),
+            );
+          }
+        },
+      },
+    ];
+
+    return (
+      <Form.Item
+        key={field.key}
+        label={field.label}
+        required={field.required}
+        tooltip={field.helperText}
+      >
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Form.Item
+            name={[field.key, "text"]}
+            label="Text"
+            rules={textRules}
+            colon={false}
+          >
+            <Input
+              disabled={isDisabled}
+              placeholder={placeholder ?? "Enter button text (e.g. RSVP Now)"}
+            />
+          </Form.Item>
+          <Form.Item
+            name={[field.key, "action_link"]}
+            label="Link"
+            rules={linkRules}
+            colon={false}
+          >
+            <Input disabled={isDisabled} placeholder="https://example.com" />
+          </Form.Item>
+        </Space>
+      </Form.Item>
+    );
+  }
   if (field.type === "richtext") {
     return (
       <Form.Item

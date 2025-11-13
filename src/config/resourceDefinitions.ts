@@ -5,6 +5,7 @@ export type FieldType =
   | "text"
   | "textarea"
   | "richtext"
+  | "primaryButton"
   | "number"
   | "boolean"
   | "select"
@@ -565,10 +566,14 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           dataPath: "content.content",
         },
         {
-          key: "cta",
-          label: "CTA (JSON)",
-          type: "json",
-          dataPath: "content.button",
+          key: "primary_button",
+          label: "Primary Button",
+          type: "primaryButton",
+          dataPath: "content.buttons.primary_button",
+          defaultValue: {
+            text: "",
+            action_link: "",
+          },
         },
       ],
     },
@@ -849,10 +854,14 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           dataPath: "content.content",
         },
         {
-          key: "cta",
-          label: "CTA (JSON)",
-          type: "json",
-          dataPath: "content.button",
+          key: "primary_button",
+          label: "Primary Button",
+          type: "primaryButton",
+          dataPath: "content.buttons.primary_button",
+          defaultValue: {
+            text: "",
+            action_link: "",
+          },
         },
       ],
     },
