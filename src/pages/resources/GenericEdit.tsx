@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Edit, useForm } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
 import { Button, Result, Space } from "antd";
@@ -9,7 +10,11 @@ import {
 import { ResourceForm } from "./ResourceForm";
 import { useNavigate } from "react-router";
 import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
-import { ORGANIZATION_RELATED_RESOURCE_NAMES, resolveOrgFilterField } from "./helpers";
+import {
+  ORGANIZATION_RELATED_RESOURCE_NAMES,
+  resolveOrgFilterField,
+  getTranslationConfigForResource,
+} from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
   name ? RESOURCE_DEFINITION_MAP[name] : undefined;
@@ -45,13 +50,37 @@ export const GenericEdit: React.FC = () => {
 
   const initialValues =
     formProps.initialValues as Record<string, unknown> | undefined;
-  const lockedFields =
-    hasOrganizationField &&
-    organizationField &&
-    initialValues &&
-    initialValues[organizationField] !== undefined
-      ? { [organizationField]: initialValues[organizationField] }
-      : undefined;
+  const translationConfig = definition
+    ? getTranslationConfigForResource(definition.name)
+    : undefined;
+  const translationForeignKey = translationConfig?.foreignKey;
+  const lockedFields = useMemo(() => {
+    const fields: Record<string, unknown> = {};
+
+    if (
+      hasOrganizationField &&
+      organizationField &&
+      initialValues &&
+      initialValues[organizationField] !== undefined
+    ) {
+      fields[organizationField] = initialValues[organizationField];
+    }
+
+    if (
+      translationForeignKey &&
+      initialValues &&
+      initialValues[translationForeignKey] !== undefined
+    ) {
+      fields[translationForeignKey] = initialValues[translationForeignKey];
+    }
+
+    return Object.keys(fields).length > 0 ? fields : undefined;
+  }, [
+    hasOrganizationField,
+    organizationField,
+    initialValues,
+    translationForeignKey,
+  ]);
 
   if (!definition) {
     return (

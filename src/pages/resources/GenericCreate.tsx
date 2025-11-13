@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Create, useForm } from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
 import { Button, Result, Space } from "antd";
@@ -12,6 +13,7 @@ import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
 import {
   ORGANIZATION_RELATED_RESOURCE_NAMES,
   resolveOrgFilterField,
+  getTranslationConfigForResource,
 } from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
@@ -42,10 +44,63 @@ export const GenericCreate: React.FC = () => {
     hasOrganizationField &&
     (organizationField === "organization_id" ||
       organizationField.endsWith(".organization_id"));
-  const lockedFields =
-    organizationIdParam && allowOrganizationPrefill && organizationField
-      ? { [organizationField]: organizationIdParam }
-      : undefined;
+  const translationConfig = definition
+    ? getTranslationConfigForResource(definition.name)
+    : undefined;
+  const translationForeignKey = translationConfig?.foreignKey;
+  const locationState = location.state as Record<string, any> | undefined;
+  const translationPrefillValue = (() => {
+    if (!translationForeignKey) {
+      return undefined;
+    }
+
+    const directParam = searchParams.get(translationForeignKey);
+    if (directParam) {
+      return directParam;
+    }
+
+    if (searchParams.get("filters[0][field]") === translationForeignKey) {
+      const filterValue = searchParams.get("filters[0][value]");
+      if (filterValue) {
+        return filterValue;
+      }
+    }
+
+    const stateQuery = locationState?.meta?.query as Record<string, any> | undefined;
+    const fromStateQuery =
+      stateQuery?.[translationForeignKey] ??
+      stateQuery?.filters?.[0]?.value;
+    if (fromStateQuery) {
+      return String(fromStateQuery);
+    }
+
+    const directStateValue = locationState?.[translationForeignKey];
+    if (directStateValue) {
+      return String(directStateValue);
+    }
+
+    return undefined;
+  })();
+
+  const lockedFields = useMemo(() => {
+    const fields: Record<string, unknown> = {};
+
+    if (organizationIdParam && allowOrganizationPrefill && organizationField) {
+      fields[organizationField] = organizationIdParam;
+    }
+
+    if (translationForeignKey && translationPrefillValue) {
+      fields[translationForeignKey] = translationPrefillValue;
+    }
+
+    return Object.keys(fields).length > 0 ? fields : undefined;
+  }, [
+    allowOrganizationPrefill,
+    organizationField,
+    organizationIdParam,
+    translationForeignKey,
+    translationPrefillValue,
+  ]);
 
   const { formProps, saveButtonProps } = useForm({
     resource: resourceName,

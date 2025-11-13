@@ -1,4 +1,10 @@
-import { List, useTable, EditButton, DeleteButton } from "@refinedev/antd";
+import {
+  List,
+  useTable,
+  EditButton,
+  DeleteButton,
+  CreateButton,
+} from "@refinedev/antd";
 import { useParsed } from "@refinedev/core";
 import {
   Alert,
@@ -243,27 +249,57 @@ export const GenericList: React.FC = () => {
     <List
       title={listTitle}
       resource={definition.name}
-      headerButtons={({ defaultButtons }) => (
-        <Space wrap>
-          {isOrganizationRelatedResource && (
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/admin/organization")}
-            >
-              Back to Organizations
-            </Button>
-          )}
-          {translationConfig && translationBackUrl && translationBackLabel && (
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(translationBackUrl!)}
-            >
-              Back to {translationBackLabel}
-            </Button>
-          )}
-          {defaultButtons}
-        </Space>
-      )}
+      headerButtons={({ defaultButtons, createButtonProps }) => {
+        const translationForeignKey = translationConfig?.foreignKey;
+        const shouldInjectTranslationQuery =
+          !!(
+            translationForeignKey &&
+            createButtonProps &&
+            currentFilterField === translationForeignKey &&
+            currentFilterValue
+          );
+
+        const createButtonNode =
+          shouldInjectTranslationQuery && createButtonProps
+            ? (
+                <CreateButton
+                  {...createButtonProps}
+                  meta={{
+                    ...(createButtonProps.meta ?? {}),
+                    query: {
+                      ...(createButtonProps.meta?.query ?? {}),
+                      [translationForeignKey]: currentFilterValue,
+                      "filters[0][field]": translationForeignKey,
+                      "filters[0][operator]": "eq",
+                      "filters[0][value]": currentFilterValue,
+                    },
+                  }}
+                />
+              )
+            : defaultButtons;
+
+        return (
+          <Space wrap>
+            {isOrganizationRelatedResource && (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate("/admin/organization")}
+              >
+                Back to Organizations
+              </Button>
+            )}
+            {translationConfig && translationBackUrl && translationBackLabel && (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate(translationBackUrl!)}
+              >
+                Back to {translationBackLabel}
+              </Button>
+            )}
+            {createButtonNode}
+          </Space>
+        );
+      }}
     >
       {groupNavigationTabs.length > 0 && (
         <Tabs
