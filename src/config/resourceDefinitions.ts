@@ -282,6 +282,24 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             },
           },
         },
+        {
+          key: "is_trivia_active",
+          label: "Trivia Active",
+          type: "boolean",
+          defaultValue: false,
+        },
+        {
+          key: "is_reservation_action",
+          label: "Reservation Action",
+          type: "boolean",
+          defaultValue: false,
+        },
+        {
+          key: "is_qr_code_active",
+          label: "QR Code Active",
+          type: "boolean",
+          defaultValue: false,
+        },
       ],
     },
     list: {
