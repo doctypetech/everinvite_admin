@@ -204,7 +204,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
       });
 
       // Fetch slide types to get the "default" ID
-      const { data: slideTypesData } = useList({
+      const { result: slideTypesResult } = useList({
         resource: "slide_types",
         queryOptions: {
           enabled: isSlideTypeField,
@@ -212,21 +212,21 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
       });
 
       const defaultSlideTypeId = useMemo(() => {
-        if (!isSlideTypeField || !slideTypesData?.data) {
+        if (!isSlideTypeField || !slideTypesResult?.data) {
           return undefined;
         }
-        const defaultType = slideTypesData.data.find(
+        const defaultType = slideTypesResult.data.find(
           (item: Record<string, any>) => item.name === "default"
         );
         return defaultType?.id;
-      }, [isSlideTypeField, slideTypesData?.data]);
+      }, [isSlideTypeField, slideTypesResult?.data]);
 
       // Get current form value
       const currentFormValue = Form.useWatch(field.key, form);
 
       // Filter out "default" from options, but include it if it's the current value (for edit mode)
       const filteredOptions = useMemo(() => {
-        if (!isSlideTypeField || !selectProps.options || !slideTypesData?.data) {
+        if (!isSlideTypeField || !selectProps.options || !slideTypesResult?.data) {
           return selectProps.options;
         }
         // Filter based on the actual slide types data
@@ -239,7 +239,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
             return option.value !== defaultTypeId || option.value === currentValue;
           }
         );
-      }, [isSlideTypeField, selectProps.options, slideTypesData?.data, defaultSlideTypeId, currentFormValue]);
+      }, [isSlideTypeField, selectProps.options, slideTypesResult?.data, defaultSlideTypeId, currentFormValue]);
 
       // Set default value if slide_type_id is null/undefined (for create mode)
       useEffect(() => {
