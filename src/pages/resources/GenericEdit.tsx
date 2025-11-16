@@ -8,12 +8,13 @@ import {
   type ResourceDefinition,
 } from "../../config/resourceDefinitions";
 import { ResourceForm } from "./ResourceForm";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { RESOURCE_GROUP_ROUTE_BY_RESOURCE } from "../../config/resourceGroups";
 import {
   ORGANIZATION_RELATED_RESOURCE_NAMES,
   resolveOrgFilterField,
   getTranslationConfigForResource,
+  TRIVIA_RESOURCE_NAMES,
 } from "./helpers";
 
 const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
@@ -25,6 +26,7 @@ export const GenericEdit: React.FC = () => {
     typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
   const navigate = useNavigate();
+  const location = useLocation();
   const groupRoute =
     resourceName && RESOURCE_GROUP_ROUTE_BY_RESOURCE[resourceName];
   const isOrganizationRelatedResource = definition
@@ -44,7 +46,55 @@ export const GenericEdit: React.FC = () => {
     onMutationSuccess: () => {
       const target =
         groupRoute ?? definition?.routes.list ?? "/admin";
-      navigate(target, { replace: true });
+      
+      // Preserve tab and other URL parameters when navigating back
+      const searchParams = new URLSearchParams(location.search);
+      const locationState = location.state as Record<string, any> | undefined;
+      const stateQuery = locationState?.meta?.query as Record<string, any> | undefined;
+      
+      // Get tab parameter from URL or state
+      const tabParam = searchParams.get("tab") || stateQuery?.tab;
+      const viewParam = searchParams.get("view") || stateQuery?.view;
+      const orgIdParam = searchParams.get("organizationId") || stateQuery?.organizationId;
+      const filterField = searchParams.get("filters[0][field]") || stateQuery?.["filters[0][field]"];
+      const filterOperator = searchParams.get("filters[0][operator]") || stateQuery?.["filters[0][operator]"];
+      const filterValue = searchParams.get("filters[0][value]") || stateQuery?.["filters[0][value]"];
+      
+      // Build search params for navigation
+      const backParams = new URLSearchParams();
+      
+      // If we're navigating to a group route and no tab is set, preserve the current resource as the tab
+      // This ensures we stay on the same tab when coming from a group page
+      const finalTabParam = tabParam || (groupRoute && resourceName ? resourceName : undefined);
+      
+      if (finalTabParam) {
+        backParams.set("tab", finalTabParam);
+      }
+      
+      // Handle view parameter for trivia resources
+      // If the resource is a trivia resource and we're going to a group route, set view=trivia
+      // Otherwise, preserve the existing view parameter if it exists
+      if (resourceName && TRIVIA_RESOURCE_NAMES.has(resourceName) && groupRoute) {
+        backParams.set("view", "trivia");
+      } else if (viewParam) {
+        backParams.set("view", viewParam);
+      }
+      
+      if (orgIdParam) {
+        backParams.set("organizationId", orgIdParam);
+      }
+      
+      if (filterField && filterOperator && filterValue) {
+        backParams.set("filters[0][field]", filterField);
+        backParams.set("filters[0][operator]", filterOperator);
+        backParams.set("filters[0][value]", filterValue);
+      }
+      
+      const searchString = backParams.toString();
+      navigate({
+        pathname: target,
+        search: searchString ? `?${searchString}` : "",
+      }, { replace: true });
     },
   });
 
