@@ -383,6 +383,7 @@ export type Database = {
           id: string
           image_path: string | null
           organization_id: string
+          slide_type_id: string | null
           updated_at: string
         }
         Insert: {
@@ -391,6 +392,7 @@ export type Database = {
           id?: string
           image_path?: string | null
           organization_id: string
+          slide_type_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -399,6 +401,7 @@ export type Database = {
           id?: string
           image_path?: string | null
           organization_id?: string
+          slide_type_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -407,6 +410,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_content_slide_type_id_fkey"
+            columns: ["slide_type_id"]
+            isOneToOne: false
+            referencedRelation: "slide_types"
             referencedColumns: ["id"]
           },
         ]
@@ -579,6 +589,27 @@ export type Database = {
           id?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      slide_types: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []

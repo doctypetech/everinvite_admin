@@ -34,6 +34,7 @@ import {
   TeamOutlined,
   UsergroupAddOutlined,
   BulbOutlined,
+  PictureOutlined,
 } from "@ant-design/icons";
 import authProvider from "./authProvider";
 import { Header } from "./components/header";
@@ -81,6 +82,7 @@ const RESOURCE_ICON_MAP: Record<string, ReactNode> = {
   profiles: <IdcardOutlined />,
   organization_content: <FileTextOutlined />,
   organization_content_translations: <FileTextOutlined />,
+  slide_types: <PictureOutlined />,
   invitees: <UsergroupAddOutlined />,
   invitee_rsvps: <UsergroupAddOutlined />,
   import_batches: <CloudUploadOutlined />,

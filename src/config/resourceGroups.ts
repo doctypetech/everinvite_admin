@@ -81,6 +81,7 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     hidden: true,
     sections: [
       { resource: "organization_content", title: "Content" },
+      { resource: "slide_types", title: "Slide Types" },
       {
         resource: "organization_content_translations",
         title: "Content Translations",

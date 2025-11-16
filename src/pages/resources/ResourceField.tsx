@@ -1,4 +1,5 @@
 import { useSelect } from "@refinedev/antd";
+import { useList } from "@refinedev/core";
 import {
   DatePicker,
   Form,
@@ -13,7 +14,7 @@ import {
 } from "antd";
 import type { FieldDefinition } from "../../config/resourceDefinitions";
 
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { RichTextEditor } from "../../components/RichTextEditor";
 import { AVAILABLE_LOCALES } from "../../config/locales";
@@ -191,6 +192,9 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
 
   if (field.type === "select") {
     if (field.relation) {
+      // Special handling for slide_type_id: filter out "default" and set it as default value
+      const isSlideTypeField = field.key === "slide_type_id" && field.relation.resource === "slide_types";
+      
       const { selectProps } = useSelect({
         resource: field.relation.resource,
         optionLabel: field.relation.optionLabel as any,
@@ -198,6 +202,54 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
         meta: field.relation.meta,
         defaultValue: lockedValue as any,
       });
+
+      // Fetch slide types to get the "default" ID
+      const { data: slideTypesData } = useList({
+        resource: "slide_types",
+        queryOptions: {
+          enabled: isSlideTypeField,
+        },
+      });
+
+      const defaultSlideTypeId = useMemo(() => {
+        if (!isSlideTypeField || !slideTypesData?.data) {
+          return undefined;
+        }
+        const defaultType = slideTypesData.data.find(
+          (item: Record<string, any>) => item.name === "default"
+        );
+        return defaultType?.id;
+      }, [isSlideTypeField, slideTypesData?.data]);
+
+      // Get current form value
+      const currentFormValue = Form.useWatch(field.key, form);
+
+      // Filter out "default" from options, but include it if it's the current value (for edit mode)
+      const filteredOptions = useMemo(() => {
+        if (!isSlideTypeField || !selectProps.options || !slideTypesData?.data) {
+          return selectProps.options;
+        }
+        // Filter based on the actual slide types data
+        const defaultTypeId = defaultSlideTypeId;
+        const currentValue = currentFormValue;
+        
+        return selectProps.options.filter(
+          (option: any) => {
+            // Keep the option if it's not the default type, OR if it's the current value (for edit mode)
+            return option.value !== defaultTypeId || option.value === currentValue;
+          }
+        );
+      }, [isSlideTypeField, selectProps.options, slideTypesData?.data, defaultSlideTypeId, currentFormValue]);
+
+      // Set default value if slide_type_id is null/undefined (for create mode)
+      useEffect(() => {
+        if (isSlideTypeField && defaultSlideTypeId && form) {
+          const currentValue = form.getFieldValue(field.key);
+          if (currentValue === null || currentValue === undefined) {
+            form.setFieldValue(field.key, defaultSlideTypeId);
+          }
+        }
+      }, [isSlideTypeField, defaultSlideTypeId, form, field.key]);
 
       return (
         <Form.Item
@@ -209,6 +261,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
         >
           <Select
             {...selectProps}
+            options={isSlideTypeField ? filteredOptions : selectProps.options}
             disabled={isDisabled}
             allowClear={!field.required && !isLocked}
             showSearch={!isLocked}

@@ -230,6 +230,38 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     },
   },
   {
+    name: "slide_types",
+    label: "Slide Types",
+    routes: {
+      list: "/admin/slide-types",
+      create: "/admin/slide-types/create",
+      edit: "/admin/slide-types/edit/:id",
+    },
+    form: {
+      fields: [
+        {
+          key: "name",
+          label: "Name",
+          type: "text",
+          required: true,
+        },
+      ],
+    },
+    list: {
+      columns: [
+        { key: "name", title: "Name", type: "text" },
+        { key: "created_at", title: "Created", type: "datetime" },
+        { key: "updated_at", title: "Updated", type: "datetime" },
+      ],
+      initialSorters: [
+        {
+          field: "created_at",
+          order: "desc",
+        },
+      ],
+    },
+  },
+  {
     name: "templates",
     label: "Templates",
     routes: {
@@ -570,6 +602,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           [
             "id",
             "organization_id",
+            "slide_type_id",
             "content",
             "image_path",
             "created_at",
@@ -587,6 +620,16 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           },
           required: true,
           disabledOnEdit: true,
+        },
+        {
+          key: "slide_type_id",
+          label: "Slide Type",
+          type: "select",
+          relation: {
+            resource: "slide_types",
+            optionLabel: "name",
+          },
+          required: true,
         },
         {
           key: "image_path",
@@ -669,11 +712,13 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           [
             "id",
             "organization_id",
+            "slide_type_id",
             "content",
             "image_path",
             "created_at",
             "updated_at",
             "organization:organizations(id, name)",
+            "slide_type:slide_types(id, name)",
           ].join(", "),
       },
       columns: [
@@ -683,6 +728,14 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           render: (_, record) => {
             const data = record as Record<string, any>;
             return data.organization?.name ?? data.organization_id ?? "—";
+          },
+        },
+        {
+          key: "slide_type",
+          title: "Slide Type",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.slide_type?.name ?? data.slide_type_id ?? "—";
           },
         },
         {
