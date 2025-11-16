@@ -21,8 +21,7 @@ const getResourceDefinition = (name?: string): ResourceDefinition | undefined =>
 
 export const GenericCreate: React.FC = () => {
   const { resource } = useParsed();
-  const resourceName =
-    typeof resource === "string" ? resource : resource?.name;
+  const resourceName = typeof resource === "string" ? resource : resource?.name;
   const definition = getResourceDefinition(resourceName);
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,10 +65,11 @@ export const GenericCreate: React.FC = () => {
       }
     }
 
-    const stateQuery = locationState?.meta?.query as Record<string, any> | undefined;
+    const stateQuery = locationState?.meta?.query as
+      | Record<string, any>
+      | undefined;
     const fromStateQuery =
-      stateQuery?.[translationForeignKey] ??
-      stateQuery?.filters?.[0]?.value;
+      stateQuery?.[translationForeignKey] ?? stateQuery?.filters?.[0]?.value;
     if (fromStateQuery) {
       return String(fromStateQuery);
     }
@@ -106,11 +106,8 @@ export const GenericCreate: React.FC = () => {
     resource: resourceName,
     meta: definition?.form?.meta,
     redirect: false,
-    defaultValues:
-      lockedFields ?? undefined,
     onMutationSuccess: () => {
-      const target =
-        groupRoute ?? definition?.routes.list ?? "/admin";
+      const target = groupRoute ?? definition?.routes.list ?? "/admin";
       navigate(target, { replace: true });
     },
   });
@@ -153,5 +150,3 @@ export const GenericCreate: React.FC = () => {
     </Create>
   );
 };
-
-

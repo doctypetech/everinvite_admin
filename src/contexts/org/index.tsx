@@ -4,7 +4,7 @@ export const usePlatformAccess = () => {
   const { data, isLoading } = usePermissions<{
     isPlatformAdmin?: boolean;
     isSuperAdmin?: boolean;
-  }>();
+  }>({});
 
   const isSuperAdmin = Boolean(data?.isSuperAdmin);
   const isPlatformAdmin = Boolean(

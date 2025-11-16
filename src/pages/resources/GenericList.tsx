@@ -193,7 +193,7 @@ export const GenericList: React.FC = () => {
       </Typography.Text>
     </div>
   ) : (
-    definition.label
+    definition?.label
   );
 
   const { tableProps, tableQuery } = useTable({
