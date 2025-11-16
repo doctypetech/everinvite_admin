@@ -17,6 +17,7 @@ import React from "react";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { RichTextEditor } from "../../components/RichTextEditor";
 import { AVAILABLE_LOCALES } from "../../config/locales";
+import { ImageUpload } from "../../components/ImageUpload";
 
 type Mode = "create" | "edit";
 
@@ -70,6 +71,7 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
   mode,
   lockedValue,
 }) => {
+  const form = Form.useFormInstance();
   const isLocked = lockedValue !== undefined;
   const isDisabled =
     isLocked ||
@@ -86,6 +88,14 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
     : undefined;
 
   const placeholder = getFieldPlaceholder(field);
+
+  // Get organization_id and record id for image uploads
+  const organizationId = Form.useWatch(
+    field.storage?.organizationField || "organization_id",
+    form
+  ) as string | undefined;
+  
+  const recordId = Form.useWatch("id", form) as string | undefined;
 
   if (field.type === "boolean") {
     return (
@@ -401,6 +411,25 @@ export const ResourceField: React.FC<ResourceFieldProps> = ({
         tooltip={field.helperText}
       >
         <RichTextEditor disabled={isDisabled} />
+      </Form.Item>
+    );
+  }
+
+  if (field.type === "image") {
+    return (
+      <Form.Item
+        key={field.key}
+        name={field.key}
+        label={field.label}
+        rules={rules}
+        tooltip={field.helperText}
+      >
+        <ImageUpload
+          field={field}
+          disabled={isDisabled}
+          organizationId={organizationId}
+          recordId={recordId}
+        />
       </Form.Item>
     );
   }

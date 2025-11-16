@@ -381,6 +381,7 @@ export type Database = {
           content: Json
           created_at: string
           id: string
+          image_path: string | null
           organization_id: string
           updated_at: string
         }
@@ -388,6 +389,7 @@ export type Database = {
           content?: Json
           created_at?: string
           id?: string
+          image_path?: string | null
           organization_id: string
           updated_at?: string
         }
@@ -395,6 +397,7 @@ export type Database = {
           content?: Json
           created_at?: string
           id?: string
+          image_path?: string | null
           organization_id?: string
           updated_at?: string
         }
@@ -446,6 +449,13 @@ export type Database = {
             columns: ["organization_content_id"]
             isOneToOne: false
             referencedRelation: "v_org_content_edit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_content_translations_fk"
+            columns: ["organization_content_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_content_with_image"
             referencedColumns: ["id"]
           },
           {
@@ -986,6 +996,44 @@ export type Database = {
           },
         ]
       }
+      v_org_content_with_image: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          id: string | null
+          image_path: string | null
+          image_public_relative_url: string | null
+          organization_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          id?: string | null
+          image_path?: string | null
+          image_public_relative_url?: never
+          organization_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          id?: string | null
+          image_path?: string | null
+          image_public_relative_url?: never
+          organization_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_content_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_organization_content_ordered: {
         Row: {
           button_text: string | null
@@ -1101,6 +1149,13 @@ export type Database = {
             columns: ["organization_content_id"]
             isOneToOne: false
             referencedRelation: "v_org_content_edit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_content_translations_fk"
+            columns: ["organization_content_id"]
+            isOneToOne: false
+            referencedRelation: "v_org_content_with_image"
             referencedColumns: ["id"]
           },
           {
