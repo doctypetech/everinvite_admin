@@ -178,12 +178,12 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     },
   },
   {
-    name: "templates",
-    label: "Templates",
+    name: "template_types",
+    label: "Template Types",
     routes: {
-      list: "/admin/templates",
-      create: "/admin/templates/create",
-      edit: "/admin/templates/edit/:id",
+      list: "/admin/template-types",
+      create: "/admin/template-types/create",
+      edit: "/admin/template-types/edit/:id",
     },
     form: {
       fields: [
@@ -203,12 +203,6 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           type: "text",
           required: true,
         },
-        {
-          key: "metadata",
-          label: "Metadata",
-          type: "json",
-          defaultValue: "{}",
-        },
       ],
     },
     list: {
@@ -223,6 +217,64 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           render: (_, record) => {
             const data = record as Record<string, any>;
             return data.event?.name ?? data.event_id ?? "—";
+          },
+        },
+        { key: "created_at", title: "Created", type: "datetime" },
+      ],
+      initialSorters: [
+        {
+          field: "created_at",
+          order: "desc",
+        },
+      ],
+    },
+  },
+  {
+    name: "templates",
+    label: "Templates",
+    routes: {
+      list: "/admin/templates",
+      create: "/admin/templates/create",
+      edit: "/admin/templates/edit/:id",
+    },
+    form: {
+      fields: [
+        {
+          key: "template_type_id",
+          label: "Template Type",
+          type: "select",
+          relation: {
+            resource: "template_types",
+            optionLabel: "name",
+          },
+          required: false,
+        },
+        {
+          key: "name",
+          label: "Name",
+          type: "text",
+          required: true,
+        },
+        {
+          key: "metadata",
+          label: "Metadata",
+          type: "json",
+          defaultValue: "{}",
+        },
+      ],
+    },
+    list: {
+      meta: {
+        select: "id, name, created_at, template_type_id, template_type:template_types(id, name)",
+      },
+      columns: [
+        { key: "name", title: "Name", type: "text" },
+        {
+          key: "template_type",
+          title: "Template Type",
+          render: (_, record) => {
+            const data = record as Record<string, any>;
+            return data.template_type?.name ?? data.template_type_id ?? "—";
           },
         },
         { key: "created_at", title: "Created", type: "datetime" },

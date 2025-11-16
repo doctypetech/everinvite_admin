@@ -611,37 +611,69 @@ export type Database = {
           },
         ]
       }
-      templates: {
+      template_types: {
         Row: {
           created_at: string
-          event_id: string
+          event_id: string | null
           id: string
-          metadata: Json
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          event_id: string
+          event_id?: string | null
           id?: string
-          metadata?: Json
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          event_id?: string
+          event_id?: string | null
           id?: string
-          metadata?: Json
           name?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "templates_event_id_fkey"
+            foreignKeyName: "template_types_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json
+          name: string
+          template_type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          name: string
+          template_type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          name?: string
+          template_type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_template_type_id_fkey"
+            columns: ["template_type_id"]
+            isOneToOne: false
+            referencedRelation: "template_types"
             referencedColumns: ["id"]
           },
         ]

@@ -43,6 +43,7 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     route: "/admin/template",
     sections: [
       { resource: "templates", title: "Templates" },
+      { resource: "template_types", title: "Template Types" },
       { resource: "template_translations", title: "Template Translations" },
     ],
   },
