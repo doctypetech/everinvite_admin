@@ -107,7 +107,7 @@ export const GenericCreate: React.FC = () => {
   const isOrganizationContent = resourceName === "organization_content";
   const organizationIdParamForOrder = organizationIdParam || undefined;
 
-  const { data: existingContentData } = useList({
+  const { result: existingContentData } = useList({
     resource: "organization_content",
     filters: organizationIdParamForOrder
       ? [
@@ -145,27 +145,6 @@ export const GenericCreate: React.FC = () => {
     resource: resourceName,
     meta: definition?.form?.meta,
     redirect: false,
-    transform: (values: Record<string, any>) => {
-      // Ensure order is included for organization_content
-      // The order should already be set by useEffect, but this is a safety net
-      if (isOrganizationContent && values.organization_id) {
-        // If order is not set, calculate it from existing data
-        if (values.order === undefined || values.order === null) {
-          const orgId = values.organization_id;
-          // Use existing data if available (from either query)
-          const dataSource = existingContentData?.data || existingContentDataForWatch?.data || [];
-          const existingOrders =
-            dataSource
-              .filter((item: Record<string, any>) => item.organization_id === orgId)
-              .map((item: Record<string, any>) => item.order as number)
-              .filter((order: number) => order !== null && order !== undefined);
-
-          const maxOrder = existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
-          values.order = maxOrder + 1;
-        }
-      }
-      return values;
-    },
     onMutationSuccess: () => {
       const target = groupRoute ?? definition?.routes.list ?? "/admin";
       
@@ -223,7 +202,7 @@ export const GenericCreate: React.FC = () => {
   const organizationId = Form.useWatch("organization_id", form) as string | undefined;
   const currentOrder = Form.useWatch("order", form) as number | undefined;
 
-  const { data: existingContentDataForWatch } = useList({
+  const { result: existingContentDataForWatch } = useList({
     resource: "organization_content",
     filters: organizationId
       ? [
