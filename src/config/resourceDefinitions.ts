@@ -605,6 +605,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             "slide_type_id",
             "content",
             "image_path",
+            "order",
             "created_at",
             "updated_at",
           ].join(", "),
@@ -620,6 +621,15 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           },
           required: true,
           disabledOnEdit: true,
+        },
+        {
+          key: "order",
+          label: "Order",
+          type: "number",
+          required: true,
+          disabledOnEdit: true,
+          helperText: "Order is automatically assigned. It will be set to the next available number for this organization.",
+          min: 0,
         },
         {
           key: "slide_type_id",
@@ -715,6 +725,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             "slide_type_id",
             "content",
             "image_path",
+            "order",
             "created_at",
             "updated_at",
             "organization:organizations(id, name)",
@@ -722,6 +733,12 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
           ].join(", "),
       },
       columns: [
+        {
+          key: "order",
+          title: "Order",
+          type: "number",
+          width: 80,
+        },
         {
           key: "organization",
           title: "Organization",
@@ -799,7 +816,8 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
         { key: "updated_at", title: "Updated", type: "datetime" },
       ],
       initialSorters: [
-        { field: "created_at", order: "desc" },
+        { field: "order", order: "asc" },
+        { field: "created_at", order: "asc" },
       ],
     },
   },

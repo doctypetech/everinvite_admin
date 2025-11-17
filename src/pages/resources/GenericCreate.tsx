@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Create, useForm } from "@refinedev/antd";
-import { useParsed } from "@refinedev/core";
-import { Button, Result, Space } from "antd";
+import { useParsed, useList } from "@refinedev/core";
+import { Button, Result, Space, Form } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import {
   RESOURCE_DEFINITION_MAP,
@@ -103,10 +103,69 @@ export const GenericCreate: React.FC = () => {
     translationPrefillValue,
   ]);
 
-  const { formProps, saveButtonProps } = useForm({
+  // Auto-calculate order for organization_content
+  const isOrganizationContent = resourceName === "organization_content";
+  const organizationIdParamForOrder = organizationIdParam || undefined;
+
+  const { data: existingContentData } = useList({
+    resource: "organization_content",
+    filters: organizationIdParamForOrder
+      ? [
+          {
+            field: "organization_id",
+            operator: "eq",
+            value: organizationIdParamForOrder,
+          },
+        ]
+      : [],
+    meta: {
+      select: "id, organization_id, order",
+    },
+    queryOptions: {
+      enabled: isOrganizationContent && !!organizationIdParamForOrder,
+    },
+  });
+
+  // Calculate initial order value if organization is pre-filled
+  const initialOrder = useMemo(() => {
+    if (isOrganizationContent && organizationIdParamForOrder && existingContentData?.data) {
+      const existingOrders =
+        existingContentData.data
+          ?.map((item: Record<string, any>) => item.order as number)
+          .filter((order: number) => order !== null && order !== undefined) ?? [];
+
+      const maxOrder =
+        existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
+      return maxOrder + 1;
+    }
+    return undefined;
+  }, [isOrganizationContent, organizationIdParamForOrder, existingContentData?.data]);
+
+  const { formProps, saveButtonProps, form } = useForm({
     resource: resourceName,
     meta: definition?.form?.meta,
     redirect: false,
+    transform: (values: Record<string, any>) => {
+      // Ensure order is included for organization_content
+      // The order should already be set by useEffect, but this is a safety net
+      if (isOrganizationContent && values.organization_id) {
+        // If order is not set, calculate it from existing data
+        if (values.order === undefined || values.order === null) {
+          const orgId = values.organization_id;
+          // Use existing data if available (from either query)
+          const dataSource = existingContentData?.data || existingContentDataForWatch?.data || [];
+          const existingOrders =
+            dataSource
+              .filter((item: Record<string, any>) => item.organization_id === orgId)
+              .map((item: Record<string, any>) => item.order as number)
+              .filter((order: number) => order !== null && order !== undefined);
+
+          const maxOrder = existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
+          values.order = maxOrder + 1;
+        }
+      }
+      return values;
+    },
     onMutationSuccess: () => {
       const target = groupRoute ?? definition?.routes.list ?? "/admin";
       
@@ -159,6 +218,65 @@ export const GenericCreate: React.FC = () => {
       }, { replace: true });
     },
   });
+
+  // Auto-calculate order for organization_content when organization_id changes
+  const organizationId = Form.useWatch("organization_id", form) as string | undefined;
+  const currentOrder = Form.useWatch("order", form) as number | undefined;
+
+  const { data: existingContentDataForWatch } = useList({
+    resource: "organization_content",
+    filters: organizationId
+      ? [
+          {
+            field: "organization_id",
+            operator: "eq",
+            value: organizationId,
+          },
+        ]
+      : [],
+    meta: {
+      select: "id, organization_id, order",
+    },
+    queryOptions: {
+      enabled: isOrganizationContent && !!organizationId && !organizationIdParamForOrder,
+    },
+  });
+
+  // Calculate and set the next order value when organization_id changes (if not pre-filled)
+  useEffect(() => {
+    if (
+      isOrganizationContent &&
+      organizationId &&
+      !organizationIdParamForOrder &&
+      form &&
+      currentOrder === undefined
+    ) {
+      const existingOrders =
+        existingContentDataForWatch?.data
+          ?.map((item: Record<string, any>) => item.order as number)
+          .filter((order: number) => order !== null && order !== undefined) ?? [];
+
+      const maxOrder =
+        existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
+      const nextOrder = maxOrder + 1;
+
+      form.setFieldValue("order", nextOrder);
+    }
+  }, [
+    isOrganizationContent,
+    organizationId,
+    organizationIdParamForOrder,
+    form,
+    currentOrder,
+    existingContentDataForWatch?.data,
+  ]);
+
+  // Set initial order if organization is pre-filled
+  useEffect(() => {
+    if (isOrganizationContent && initialOrder !== undefined && form) {
+      form.setFieldValue("order", initialOrder);
+    }
+  }, [isOrganizationContent, initialOrder, form]);
 
   if (!definition) {
     return (
