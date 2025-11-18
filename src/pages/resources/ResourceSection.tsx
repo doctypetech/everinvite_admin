@@ -12,9 +12,11 @@ import {
   BulbOutlined,
   GlobalOutlined,
   EyeOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
 import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
+import { InviteeExcelImport } from "../../components/InviteeExcelImport";
 
 import {
   RESOURCE_DEFINITION_MAP,
@@ -61,6 +63,7 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
   const navigate = useNavigate();
   const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<Record<string, any> | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const getRecordId = useMemo(
     () =>
@@ -183,7 +186,19 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
           <CreateButton {...createButtonProps} />
         );
 
-        return button;
+        return (
+          <Space wrap>
+            {button}
+            {resourceName === "invitees" && (
+              <Button
+                icon={<FileExcelOutlined />}
+                onClick={() => setImportModalOpen(true)}
+              >
+                Import Excel
+              </Button>
+            )}
+          </Space>
+        );
       }}
     >
       <Table
@@ -319,6 +334,16 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
             <ContentDetailsView record={viewingRecord} />
           )}
         </Drawer>
+      )}
+      {resourceName === "invitees" && (
+        <InviteeExcelImport
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          organizationId={organizationId || ""}
+          onSuccess={() => {
+            tableQuery?.refetch();
+          }}
+        />
       )}
     </List>
   );

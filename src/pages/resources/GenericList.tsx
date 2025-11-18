@@ -25,9 +25,11 @@ import {
   BulbOutlined,
   EyeOutlined,
   GlobalOutlined,
+  FileExcelOutlined,
 } from "@ant-design/icons";
 import { useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { InviteeExcelImport } from "../../components/InviteeExcelImport";
 import {
   RESOURCE_DEFINITION_MAP,
   type ResourceDefinition,
@@ -80,6 +82,7 @@ export const GenericList: React.FC = () => {
   const location = useLocation();
   const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<Record<string, any> | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const isOrganizationRelatedResource = definition
     ? ORGANIZATION_RELATED_RESOURCE_NAMES.has(definition.name)
     : false;
@@ -97,7 +100,9 @@ export const GenericList: React.FC = () => {
   const currentFilterField = searchParams.get("filters[0][field]");
   const currentFilterValue = searchParams.get("filters[0][value]");
   const organizationIdParam =
-    searchParams.get("organizationId") ?? currentFilterValue ?? undefined;
+    searchParams.get("organizationId") ?? 
+    (currentFilterField === "organization_id" ? currentFilterValue : null) ?? 
+    undefined;
   const translationConfig = definition
     ? getTranslationConfigForResource(definition.name)
     : undefined;
@@ -218,6 +223,21 @@ export const GenericList: React.FC = () => {
     },
   });
 
+  // Get organization ID from table data if not in URL (for invitees)
+  const finalOrganizationId = useMemo(() => {
+    if (organizationIdParam) return organizationIdParam;
+    
+    // For invitees, try to get from table data
+    if (resourceName === "invitees" && tableProps?.dataSource && tableProps.dataSource.length > 0) {
+      const firstRecord = tableProps.dataSource[0] as Record<string, any>;
+      if (firstRecord?.organization_id) {
+        return String(firstRecord.organization_id);
+      }
+    }
+    
+    return organizationIdParam;
+  }, [organizationIdParam, resourceName, tableProps?.dataSource]);
+
   if (!definition) {
     return (
       <Result
@@ -308,6 +328,14 @@ export const GenericList: React.FC = () => {
               </Button>
             )}
             {createButtonNode}
+            {resourceName === "invitees" && (
+              <Button
+                icon={<FileExcelOutlined />}
+                onClick={() => setImportModalOpen(true)}
+              >
+                Import Excel
+              </Button>
+            )}
           </Space>
         );
       }}
@@ -497,6 +525,16 @@ export const GenericList: React.FC = () => {
             <ContentDetailsView record={viewingRecord} />
           )}
         </Drawer>
+      )}
+      {resourceName === "invitees" && (
+        <InviteeExcelImport
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          organizationId={finalOrganizationId || ""}
+          onSuccess={() => {
+            tableQuery?.refetch();
+          }}
+        />
       )}
     </List>
   );
