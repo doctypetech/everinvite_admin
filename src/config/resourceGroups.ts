@@ -99,15 +99,6 @@ export const RESOURCE_GROUP_DEFINITIONS: ResourceGroupDefinition[] = [
     ],
   },
   {
-    name: "imports",
-    label: "Imports",
-    route: "/admin/imports",
-    sections: [
-      { resource: "import_batches", title: "Import Batches" },
-      { resource: "import_invitee_rows", title: "Import Rows" },
-    ],
-  },
-  {
     name: "faq",
     label: "FAQ",
     route: "/admin/faq",

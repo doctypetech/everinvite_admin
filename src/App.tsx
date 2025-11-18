@@ -26,7 +26,6 @@ import {
 import {
   AppstoreOutlined,
   CalendarOutlined,
-  CloudUploadOutlined,
   FileTextOutlined,
   IdcardOutlined,
   LayoutOutlined,
@@ -67,7 +66,6 @@ const GROUP_ICON_MAP: Record<string, ReactNode> = {
   profile: <IdcardOutlined />,
   "organization-content": <FileTextOutlined />,
   invitees: <UsergroupAddOutlined />,
-  imports: <CloudUploadOutlined />,
   faq: <QuestionCircleOutlined />,
 };
 
@@ -85,8 +83,6 @@ const RESOURCE_ICON_MAP: Record<string, ReactNode> = {
   slide_types: <PictureOutlined />,
   invitees: <UsergroupAddOutlined />,
   invitee_rsvps: <UsergroupAddOutlined />,
-  import_batches: <CloudUploadOutlined />,
-  import_invitee_rows: <CloudUploadOutlined />,
   trivia_questions: <BulbOutlined />,
   trivia_options: <BulbOutlined />,
   trivia_answers: <BulbOutlined />,
