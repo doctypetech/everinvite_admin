@@ -5,7 +5,7 @@ import {
   List,
   useTable,
 } from "@refinedev/antd";
-import { Alert, Button, Result, Space, Table, Tooltip, Drawer, Descriptions, Typography } from "antd";
+import { Alert, Button, Result, Space, Table, Tooltip, Drawer, Descriptions, Typography, message } from "antd";
 import {
   FileTextOutlined,
   UsergroupAddOutlined,
@@ -13,10 +13,13 @@ import {
   GlobalOutlined,
   EyeOutlined,
   FileExcelOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { InviteeExcelImport } from "../../components/InviteeExcelImport";
+import * as XLSX from "xlsx";
+import { supabaseClient } from "../../utility";
 
 import {
   RESOURCE_DEFINITION_MAP,
@@ -64,6 +67,7 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
   const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<Record<string, any> | null>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const getRecordId = useMemo(
     () =>
@@ -122,6 +126,76 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
     filters: filtersConfig,
     syncWithLocation: false,
   });
+
+  const handleExportExcel = async () => {
+    if (!organizationId) {
+      message.error("Organization ID is required for export");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      // Get base URL from environment variable
+      const baseUrl = import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
+
+      // Fetch organization to get slug
+      const { data: organization, error: orgError } = await supabaseClient
+        .from("organizations")
+        .select("slug")
+        .eq("id", organizationId)
+        .single();
+
+      if (orgError || !organization) {
+        message.error("Failed to fetch organization");
+        return;
+      }
+
+      // Fetch all invitees with access_code for this organization
+      const { data: invitees, error: inviteesError } = await supabaseClient
+        .from("invitees")
+        .select("full_name, phone_number, access_code")
+        .eq("organization_id", organizationId);
+
+      if (inviteesError) {
+        message.error("Failed to fetch invitees");
+        return;
+      }
+
+      if (!invitees || invitees.length === 0) {
+        message.warning("No invitees found to export");
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = invitees.map((invitee) => {
+        const link = `${baseUrl}/${organization.slug}?access_code=${invitee.access_code}`;
+        return {
+          "Full Name": invitee.full_name || "",
+          "Phone Number": invitee.phone_number || "",
+          "Link": link,
+        };
+      });
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Invitees");
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `invitees_${organization.slug}_${timestamp}.xlsx`;
+
+      // Write file
+      XLSX.writeFile(workbook, filename);
+
+      message.success(`Exported ${invitees.length} invitee(s) to ${filename}`);
+    } catch (error: any) {
+      console.error("Export error:", error);
+      message.error(`Export failed: ${error.message || "Unknown error"}`);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (!definition) {
     return (
@@ -190,12 +264,24 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
           <Space wrap>
             {button}
             {resourceName === "invitees" && (
-              <Button
-                icon={<FileExcelOutlined />}
-                onClick={() => setImportModalOpen(true)}
-              >
-                Import Excel
-              </Button>
+              <>
+                {tableProps?.dataSource && tableProps.dataSource.length > 0 && (
+                  <Button
+                    icon={<DownloadOutlined />}
+                    onClick={handleExportExcel}
+                    loading={exporting}
+                    disabled={!organizationId || exporting}
+                  >
+                    Export Excel
+                  </Button>
+                )}
+                <Button
+                  icon={<FileExcelOutlined />}
+                  onClick={() => setImportModalOpen(true)}
+                >
+                  Import Excel
+                </Button>
+              </>
             )}
           </Space>
         );
