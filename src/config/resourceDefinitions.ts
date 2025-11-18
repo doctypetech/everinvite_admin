@@ -764,56 +764,6 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
             return content?.title ?? "—";
           },
         },
-        {
-          key: "subtitle",
-          title: "Subtitle",
-          render: (_, record) => {
-            const data = record as Record<string, any>;
-            const content = data.content as Record<string, any> | undefined;
-            return content?.sub_title ?? "—";
-          },
-        },
-        {
-          key: "event_date",
-          title: "Event Date",
-          render: (_, record) => {
-            const data = record as Record<string, any>;
-            const content = data.content as Record<string, any> | undefined;
-            const event = content?.event as Record<string, any> | undefined;
-            return event?.date ?? "—";
-          },
-        },
-        {
-          key: "event_time",
-          title: "Event Time",
-          render: (_, record) => {
-            const data = record as Record<string, any>;
-            const content = data.content as Record<string, any> | undefined;
-            const event = content?.event as Record<string, any> | undefined;
-            return event?.time ?? "—";
-          },
-        },
-        {
-          key: "location_place",
-          title: "Location",
-          render: (_, record) => {
-            const data = record as Record<string, any>;
-            const content = data.content as Record<string, any> | undefined;
-            const location = content?.location as Record<string, any> | undefined;
-            return location?.name ?? "—";
-          },
-        },
-        {
-          key: "host_name",
-          title: "Host",
-          render: (_, record) => {
-            const data = record as Record<string, any>;
-            const content = data.content as Record<string, any> | undefined;
-            return content?.host_name ?? "—";
-          },
-        },
-        { key: "created_at", title: "Created", type: "datetime" },
-        { key: "updated_at", title: "Updated", type: "datetime" },
       ],
       initialSorters: [
         { field: "order", order: "asc" },

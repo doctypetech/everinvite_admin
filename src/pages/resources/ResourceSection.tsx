@@ -5,14 +5,15 @@ import {
   List,
   useTable,
 } from "@refinedev/antd";
-import { Alert, Button, Result, Space, Table, Tooltip } from "antd";
+import { Alert, Button, Result, Space, Table, Tooltip, Drawer, Descriptions, Typography } from "antd";
 import {
   FileTextOutlined,
   UsergroupAddOutlined,
   BulbOutlined,
   GlobalOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 
 import {
@@ -43,6 +44,7 @@ const ORGANIZATION_ACTION_ICON_MAP: Record<string, ReactNode> = {
 };
 
 const TRANSLATION_ACTION_ICON = <GlobalOutlined />;
+const VIEW_ACTION_ICON = <EyeOutlined />;
 
 export type ResourceSectionProps = {
   resourceName: string;
@@ -57,6 +59,8 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
 }) => {
   const definition = getResourceDefinition(resourceName);
   const navigate = useNavigate();
+  const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
+  const [viewingRecord, setViewingRecord] = useState<Record<string, any> | null>(null);
 
   const getRecordId = useMemo(
     () =>
@@ -241,6 +245,19 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
                       </Tooltip>
                     );
                   })}
+                {resourceName === "organization_content" && (
+                  <Tooltip title="View Details" key="view">
+                    <Button
+                      size="small"
+                      icon={VIEW_ACTION_ICON}
+                      aria-label="View Details"
+                      onClick={() => {
+                        setViewingRecord(record);
+                        setViewDrawerOpen(true);
+                      }}
+                    />
+                  </Tooltip>
+                )}
                 {(() => {
                   const translationConfig =
                     getTranslationLinkConfig(resourceName);
@@ -287,7 +304,108 @@ export const ResourceSection: React.FC<ResourceSectionProps> = ({
           }}
         />
       </Table>
+      {resourceName === "organization_content" && (
+        <Drawer
+          title="Content Details"
+          placement="right"
+          width={600}
+          open={viewDrawerOpen}
+          onClose={() => {
+            setViewDrawerOpen(false);
+            setViewingRecord(null);
+          }}
+        >
+          {viewingRecord && (
+            <ContentDetailsView record={viewingRecord} />
+          )}
+        </Drawer>
+      )}
     </List>
+  );
+};
+
+const ContentDetailsView: React.FC<{ record: Record<string, any> }> = ({ record }) => {
+  const data = record as Record<string, any>;
+  const content = data.content as Record<string, any> | undefined;
+  const event = content?.event as Record<string, any> | undefined;
+  const location = content?.location as Record<string, any> | undefined;
+  const buttons = content?.buttons as Record<string, any> | undefined;
+  const primaryButton = buttons?.primary_button as Record<string, any> | undefined;
+
+  return (
+    <Descriptions column={1} bordered>
+      <Descriptions.Item label="ID">{data.id ?? "—"}</Descriptions.Item>
+      <Descriptions.Item label="Order">{data.order ?? "—"}</Descriptions.Item>
+      <Descriptions.Item label="Organization">
+        {data.organization?.name ?? data.organization_id ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Slide Type">
+        {data.slide_type?.name ?? data.slide_type_id ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Image Path">
+        {data.image_path ? (
+          <a href={data.image_path} target="_blank" rel="noopener noreferrer">
+            {data.image_path}
+          </a>
+        ) : (
+          "—"
+        )}
+      </Descriptions.Item>
+      <Descriptions.Item label="Title">
+        {content?.title ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Subtitle">
+        {content?.sub_title ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Event Date">
+        {event?.date ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Event Time">
+        {event?.time ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Location Name">
+        {location?.name ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Location URL">
+        {location?.url ? (
+          <a href={location.url} target="_blank" rel="noopener noreferrer">
+            {location.url}
+          </a>
+        ) : (
+          "—"
+        )}
+      </Descriptions.Item>
+      <Descriptions.Item label="Host Name">
+        {content?.host_name ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Body HTML">
+        {content?.content ? (
+          <Typography.Paragraph>
+            <div dangerouslySetInnerHTML={{ __html: content.content }} />
+          </Typography.Paragraph>
+        ) : (
+          "—"
+        )}
+      </Descriptions.Item>
+      <Descriptions.Item label="Primary Button Text">
+        {primaryButton?.text ?? "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Primary Button Link">
+        {primaryButton?.action_link ? (
+          <a href={primaryButton.action_link} target="_blank" rel="noopener noreferrer">
+            {primaryButton.action_link}
+          </a>
+        ) : (
+          "—"
+        )}
+      </Descriptions.Item>
+      <Descriptions.Item label="Created At">
+        {data.created_at ? new Date(data.created_at).toLocaleString() : "—"}
+      </Descriptions.Item>
+      <Descriptions.Item label="Updated At">
+        {data.updated_at ? new Date(data.updated_at).toLocaleString() : "—"}
+      </Descriptions.Item>
+    </Descriptions>
   );
 };
 
