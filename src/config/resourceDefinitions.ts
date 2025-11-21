@@ -1111,7 +1111,7 @@ export const RESOURCE_DEFINITIONS: ResourceDefinition[] = [
     list: {
       meta: {
         select:
-          "id, organization_id, full_name, status, attending_guests, organization:organizations(id, name)",
+          "id, organization_id, full_name, phone_number, access_code, status, attending_guests, organization:organizations(id, name, slug)",
       },
       columns: [
         {
