@@ -27,7 +27,6 @@ import {
   GlobalOutlined,
   FileExcelOutlined,
   DownloadOutlined,
-  MessageOutlined,
 } from "@ant-design/icons";
 import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -89,7 +88,6 @@ export const GenericList: React.FC = () => {
   const [viewingRecord, setViewingRecord] = useState<Record<string, any> | null>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
   const isOrganizationRelatedResource = definition
     ? ORGANIZATION_RELATED_RESOURCE_NAMES.has(definition.name)
     : false;
@@ -264,117 +262,6 @@ export const GenericList: React.FC = () => {
     fetchOrganizationSlug();
   }, [resourceName, finalOrganizationId]);
 
-  const handleSendWhatsApp = (record: Record<string, any>) => {
-    const phoneNumber = record.phone_number;
-    const accessCode = record.access_code;
-    const fullName = record.full_name || "Guest";
-    
-    if (!phoneNumber) {
-      message.error("Phone number is required to send WhatsApp message");
-      return;
-    }
-
-    if (!accessCode) {
-      message.error("Access code is missing for this invitee");
-      return;
-    }
-
-    if (!organizationSlug) {
-      message.error("Organization information is not available");
-      return;
-    }
-
-    // Get base URL from environment variable
-    const baseUrl = import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
-    const personalizedLink = `${baseUrl}/${organizationSlug}?access_code=${accessCode}`;
-
-    // Custom message template
-    const customMessage = `Hello ${fullName}! 👋\n\nYou're invited to our event! Please use the link below to access your invitation:\n\n${personalizedLink}\n\nWe look forward to seeing you!`;
-
-    // Format phone number (remove spaces, dashes, parentheses, and ensure it starts with country code)
-    const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, "");
-    
-    // WhatsApp link format: https://wa.me/{phone}?text={message}
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(customMessage)}`;
-    
-    // Open WhatsApp in a new window/tab
-    window.open(whatsappUrl, "_blank");
-  };
-
-  const handleBulkSendWhatsApp = async () => {
-    if (!finalOrganizationId) {
-      message.error("Organization ID is required");
-      return;
-    }
-
-    if (!organizationSlug) {
-      message.error("Organization information is not available");
-      return;
-    }
-
-    setSendingWhatsApp(true);
-    try {
-      // Get base URL from environment variable
-      const baseUrl = import.meta.env.VITE_FRONTEND_URL || "http://localhost:3000";
-
-      // Fetch all invitees with phone numbers and access codes
-      const { data: invitees, error: inviteesError } = await supabaseClient
-        .from("invitees")
-        .select("full_name, phone_number, access_code")
-        .eq("organization_id", finalOrganizationId)
-        .not("phone_number", "is", null)
-        .not("access_code", "is", null);
-
-      if (inviteesError) {
-        message.error("Failed to fetch invitees");
-        return;
-      }
-
-      if (!invitees || invitees.length === 0) {
-        message.warning("No invitees with phone numbers found");
-        return;
-      }
-
-      // Filter out invitees without phone numbers
-      const validInvitees = invitees.filter(
-        (inv) => inv.phone_number && inv.access_code
-      );
-
-      if (validInvitees.length === 0) {
-        message.warning("No invitees with valid phone numbers found");
-        return;
-      }
-
-      // Open WhatsApp for each invitee with a small delay to avoid browser blocking
-      let opened = 0;
-      for (let i = 0; i < validInvitees.length; i++) {
-        const invitee = validInvitees[i];
-        const fullName = invitee.full_name || "Guest";
-        const personalizedLink = `${baseUrl}/${organizationSlug}?access_code=${invitee.access_code}`;
-        const customMessage = `Hello ${fullName}! 👋\n\nYou're invited to our event! Please use the link below to access your invitation:\n\n${personalizedLink}\n\nWe look forward to seeing you!`;
-        const cleanPhone = invitee.phone_number.replace(/[\s\-\(\)]/g, "");
-        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(customMessage)}`;
-
-        // Open with delay to avoid browser blocking multiple popups
-        setTimeout(() => {
-          window.open(whatsappUrl, "_blank");
-          opened++;
-          if (opened === validInvitees.length) {
-            message.success(`Opened WhatsApp for ${opened} invitee(s). Please send the messages manually.`);
-          }
-        }, i * 500); // 500ms delay between each
-      }
-
-      // Show info message
-      message.info(`Opening WhatsApp for ${validInvitees.length} invitee(s). Please allow popups if blocked.`);
-    } catch (error: any) {
-      console.error("Bulk WhatsApp error:", error);
-      message.error(`Failed to send WhatsApp messages: ${error.message || "Unknown error"}`);
-    } finally {
-      setSendingWhatsApp(false);
-    }
-  };
-
   const handleExportExcel = async () => {
     if (!finalOrganizationId) {
       message.error("Organization ID is required for export");
@@ -547,14 +434,6 @@ export const GenericList: React.FC = () => {
                     >
                       Export Excel
                     </Button>
-                    <Button
-                      icon={<MessageOutlined />}
-                      onClick={handleBulkSendWhatsApp}
-                      loading={sendingWhatsApp}
-                      disabled={!finalOrganizationId || sendingWhatsApp || !organizationSlug}
-                    >
-                      Bulk Send WhatsApp
-                    </Button>
                   </>
                 )}
                 <Button
@@ -690,16 +569,6 @@ export const GenericList: React.FC = () => {
                         setViewingRecord(record);
                         setViewDrawerOpen(true);
                       }}
-                    />
-                  </Tooltip>
-                )}
-                {definition.name === "invitees" && record.phone_number && (
-                  <Tooltip title="Send WhatsApp" key="whatsapp">
-                    <Button
-                      size="small"
-                      icon={<MessageOutlined />}
-                      aria-label="Send WhatsApp"
-                      onClick={() => handleSendWhatsApp(record)}
                     />
                   </Tooltip>
                 )}
